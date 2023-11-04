@@ -10,6 +10,19 @@
 
 
 // Custom definitions may go here
+buildscript {
+    ext.kotlin_version = "1.8.0"
+}
+
+plugins {
+    id "org.jetbrains.kotlin.android" version "$kotlin_version"
+}
+
+repositories {
+    maven { url = uri("C:/Users/Alessandro/IdeaProjects/joos/testRepo")}
+//    maven { url = 'https://jitpack.io' }
+    maven { url = 'https://maven.brott.dev/' }
+}
 
 // Include common definitions from above.
 apply from: '../build.common.gradle'
@@ -26,4 +39,6 @@ android {
 dependencies {
     implementation project(':FtcRobotController')
     annotationProcessor files('lib/OpModeAnnotationProcessor.jar')
+
+    implementation "com.amarcolini.joos:command:0.4.9"
 }
