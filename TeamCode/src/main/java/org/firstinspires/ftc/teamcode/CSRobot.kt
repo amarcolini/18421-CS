@@ -51,11 +51,15 @@ class CSRobot : Robot() {
             .getIdentifier("cameraMonitorViewId", "id", hMap.appContext.packageName)
     )
 
+    val pixelPlopper = PixelPlopper(Servo(hMap, "pixel_claw"))
+
     private val lynxModules = hMap.getAll<LynxModule>()
     override fun init() {
-        register(drive, verticalExtension, outtake, droneLauncher)
+        register(drive, verticalExtension, outtake, droneLauncher, pixelPlopper)
 
         verticalExtension.motors.resetEncoders()
+
+        droneLauncher.reset()
 
         lynxModules.forEach {
             it.bulkCachingMode = LynxModule.BulkCachingMode.MANUAL

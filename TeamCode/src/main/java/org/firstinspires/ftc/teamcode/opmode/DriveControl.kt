@@ -1,16 +1,11 @@
-package org.firstinspires.ftc.teamcode
+package org.firstinspires.ftc.teamcode.opmode
 
 import com.amarcolini.joos.command.Command
 import com.amarcolini.joos.command.CommandOpMode
-import com.amarcolini.joos.command.CommandScheduler.gamepad
-import com.amarcolini.joos.gamepad.GamepadEx
-import com.amarcolini.joos.gamepad.MultipleGamepad
-import com.amarcolini.joos.gamepad.Toggleable
 import com.amarcolini.joos.geometry.Pose2d
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp
-import java.util.function.BooleanSupplier
+import org.firstinspires.ftc.teamcode.CSRobot
 import kotlin.math.pow
-import kotlin.reflect.KProperty0
 
 @TeleOp(name = "DriveControl", group = "Official")
 class DriveControl : CommandOpMode() {
@@ -18,6 +13,7 @@ class DriveControl : CommandOpMode() {
 
     override fun preInit() {
         robot.outtake.reset()
+        robot.pixelPlopper.prime()
 
         schedule(true) {
             val leftStick = gamepad.p1.getLeftStick()
@@ -51,5 +47,10 @@ class DriveControl : CommandOpMode() {
 
         map(gamepad.p1.dpad_up::justActivated, robot.droneLauncher::launch)
         map(gamepad.p1.dpad_down::justActivated, robot.droneLauncher::reset)
+
+        map(gamepad.p1.dpad_left::justActivated, Command.of {
+            if (robot.pixelPlopper.isPrimed) robot.pixelPlopper.open()
+            else robot.pixelPlopper.prime()
+        })
     }
 }

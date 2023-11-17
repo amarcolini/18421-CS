@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode
+package org.firstinspires.ftc.teamcode.opmode
 
 import com.amarcolini.joos.command.Command
 import com.amarcolini.joos.command.Command.Companion.emptyCommand
@@ -8,7 +8,6 @@ import com.amarcolini.joos.command.InstantCommand
 import com.amarcolini.joos.command.SequentialCommand
 import com.amarcolini.joos.command.TimeCommand
 import com.amarcolini.joos.command.WaitCommand
-import com.amarcolini.joos.control.DCMotorFeedforward
 import com.amarcolini.joos.dashboard.JoosConfig
 import com.amarcolini.joos.drive.DriveSignal
 import com.amarcolini.joos.extensions.*
@@ -17,13 +16,8 @@ import com.amarcolini.joos.geometry.Angle
 import com.amarcolini.joos.geometry.Pose2d
 import com.amarcolini.joos.geometry.Vector2d
 import com.amarcolini.joos.hardware.Motor
-import com.amarcolini.joos.kinematics.MecanumKinematics
-import com.amarcolini.joos.localization.AngleSensor
-import com.amarcolini.joos.trajectory.TrajectoryBuilder
-import com.amarcolini.joos.trajectory.constraints.GenericConstraints
 import com.amarcolini.joos.util.cos
 import com.amarcolini.joos.util.deg
-import com.amarcolini.joos.util.epsilonEquals
 import com.amarcolini.joos.util.rad
 import com.amarcolini.joos.util.sin
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot
@@ -32,10 +26,8 @@ import com.qualcomm.robotcore.hardware.IMU
 import org.apache.commons.math3.linear.Array2DRowRealMatrix
 import org.apache.commons.math3.linear.ArrayRealVector
 import org.apache.commons.math3.linear.QRDecomposition
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit
-import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder
-import org.firstinspires.ftc.robotcore.external.navigation.AxesReference
-import kotlin.math.PI
+import org.firstinspires.ftc.teamcode.CSRobot
+import org.firstinspires.ftc.teamcode.Drivetrain
 
 
 @TeleOp(group = "Tuning")
@@ -197,7 +189,7 @@ class ManualFeedforwardTuner : CommandOpMode() {
             .build()
         val backwardTrajectory =
             robot.drive.trajectoryBuilder(forwardTrajectory.end())
-                .back(ManualFeedforwardTuner.distance)
+                .back(distance)
                 .build()
 
         var targetVelocity = 0.0

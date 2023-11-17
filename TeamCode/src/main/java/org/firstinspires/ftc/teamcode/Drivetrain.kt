@@ -32,20 +32,20 @@ class Drivetrain(
     val motors: MotorGroup,
     val encoders: List<Motor.Encoder>
 ) : AbstractMecanumDrive(
-    Companion.trackWidth, Companion.trackWidth, 0.7
+    Companion.trackWidth, Companion.trackWidth, Companion.lateralMultiplier
 ), Component {
     val parallelEncoders = listOf(encoders[0], encoders[1])
     val perpEncoder = encoders[2]
 
     val constraints = MecanumConstraints(
-        55.0,
+        48.0,
         trackWidth,
         wheelBase,
         lateralMultiplier,
-        55.0,
-        40.0,
-        330.deg,
-        360.deg
+        48.0,
+        38.0,
+        280.deg,
+        250.deg
     )
 
     val trajectoryFollower: TrajectoryFollower = HolonomicPIDVAFollower(
@@ -156,7 +156,8 @@ class Drivetrain(
         var leftPose = Pose2d(0.0, 7.325, 0.deg)
         var rightPose = Pose2d(0.0, -7.325, 0.deg)
         var perpPose = Pose2d(5.801, 0.0, (-90).deg)
-        var trackWidth = 13.0
+        var trackWidth = 13.5
+        var lateralMultiplier = 0.7
 
         val axialCoeffs = PIDCoefficients(8.0, 0.0, 0.2)
         val lateralCoeffs = PIDCoefficients(8.0, 0.0, 0.2)

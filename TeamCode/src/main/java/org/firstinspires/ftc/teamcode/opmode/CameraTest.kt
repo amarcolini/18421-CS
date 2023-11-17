@@ -1,8 +1,10 @@
-package org.firstinspires.ftc.teamcode
+package org.firstinspires.ftc.teamcode.opmode
 
 import com.acmerobotics.dashboard.FtcDashboard
 import com.amarcolini.joos.command.CommandOpMode
+import com.amarcolini.joos.dashboard.JoosConfig
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp
+import org.firstinspires.ftc.teamcode.CSRobot
 import org.firstinspires.ftc.teamcode.vision.PropPipeline
 import org.openftc.easyopencv.OpenCvCamera
 import org.openftc.easyopencv.OpenCvCameraRotation
@@ -10,10 +12,15 @@ import org.openftc.easyopencv.OpenCvWebcam
 import java.lang.IllegalStateException
 
 @TeleOp(group = "camera")
+@JoosConfig
 class CameraTest : CommandOpMode() {
     private val robot by robot<CSRobot>()
 
-    private val pipeline = PropPipeline()
+    private val pipeline = PropPipeline(mirrored)
+
+    companion object {
+        var mirrored = false
+    }
 
     override fun preInit() {
         robot.webcam.openCameraDeviceAsync(object : OpenCvCamera.AsyncCameraOpenListener {
