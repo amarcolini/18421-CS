@@ -7,6 +7,7 @@ import com.amarcolini.joos.dashboard.JoosConfig
 import com.amarcolini.joos.geometry.Pose2d
 import com.amarcolini.joos.util.deg
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous
+import com.qualcomm.robotcore.eventloop.opmode.Disabled
 import org.firstinspires.ftc.teamcode.CSRobot
 import org.firstinspires.ftc.teamcode.tile
 import org.firstinspires.ftc.teamcode.vision.PropPipeline
@@ -14,19 +15,20 @@ import org.openftc.easyopencv.OpenCvCamera
 import org.openftc.easyopencv.OpenCvCameraRotation
 
 @Autonomous
+@Disabled
 @JoosConfig
-class RedShortAuto : CommandOpMode() {
+class RedFarAuto : CommandOpMode() {
     private val robot by robot<CSRobot>()
-    private val pipeline = PropPipeline(false)
+    private val pipeline = PropPipeline(true)
 
     companion object {
         var startPose = Pose2d(16.0, -3 * tile + 9.0, (90).deg)
-        var rightPlopPose = Pose2d(24.0, -42.0, (90).deg)
-        var rightPlacePose = Pose2d(52.0, -45.0, 0.deg)
-        var centerPlopPose = Pose2d(16.0, -35.0, (90).deg)
-        var centerPlacePose = Pose2d(52.0, -37.0, 0.deg)
-        var leftPlopPose = Pose2d(10.0, -36.0, (180).deg)
-        var leftPlacePose = Pose2d(52.0, -29.0, 0.deg)
+        var rightPlopPose = Pose2d(30.0, -50.0, (90).deg)
+        var rightPlacePose = Pose2d(51.0, -48.0, 0.deg)
+        var centerPlopPose = Pose2d(16.0, -36.0, (90).deg)
+        var centerPlacePose = Pose2d(51.0, -42.0, 0.deg)
+        var leftPlopPose = Pose2d(10.5, -36.0, (180).deg)
+        var leftPlacePose = Pose2d(51.0, -36.0, 0.deg)
     }
 
     override fun preInit() {
@@ -71,7 +73,6 @@ class RedShortAuto : CommandOpMode() {
                 .build()
         val yellowPlaceTrajectory =
             robot.drive.trajectoryBuilder(purplePlopTrajectory.end())
-                .back(3.0)
                 .lineToSplineHeading(placePose)
                 .build()
 
@@ -89,7 +90,7 @@ class RedShortAuto : CommandOpMode() {
         SequentialCommand(
             true,
             purplePlopCommand,
-            yellowPlaceCommand
+//            yellowPlaceCommand
         ).thenStopOpMode().schedule()
     }
 }

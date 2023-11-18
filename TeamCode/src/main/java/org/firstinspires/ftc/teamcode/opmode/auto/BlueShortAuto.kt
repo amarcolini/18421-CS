@@ -21,12 +21,12 @@ class BlueShortAuto : CommandOpMode() {
 
     companion object {
         var startPose = Pose2d(16.0, 3 * tile - 9.0, (-90).deg)
-        var rightPlopPose = Pose2d(11.0, 32.0, (180).deg)
-        var rightPlacePose = Pose2d(51.0, 36.0, 0.deg)
-        var centerPlopPose = Pose2d(16.0, 36.0, (-90).deg)
-        var centerPlacePose = Pose2d(51.0, 42.0, 0.deg)
-        var leftPlopPose = Pose2d(30.0, 50.0, (-90).deg)
-        var leftPlacePose = Pose2d(51.0, 48.0, 0.deg)
+        var rightPlopPose = Pose2d(9.5, 32.0, (180).deg)
+        var rightPlacePose = Pose2d(52.0, 32.0, 5.deg)
+        var centerPlopPose = Pose2d(16.0, 34.5, (-90).deg)
+        var centerPlacePose = Pose2d(52.0, 41.0, 0.deg)
+        var leftPlopPose = Pose2d(26.0, 46.0, (-90).deg)
+        var leftPlacePose = Pose2d(52.0, 48.0, 0.deg)
     }
 
     override fun preInit() {
@@ -71,6 +71,7 @@ class BlueShortAuto : CommandOpMode() {
                 .build()
         val yellowPlaceTrajectory =
             robot.drive.trajectoryBuilder(purplePlopTrajectory.end())
+                .back(3.0)
                 .lineToSplineHeading(placePose)
                 .build()
 
@@ -88,7 +89,7 @@ class BlueShortAuto : CommandOpMode() {
         SequentialCommand(
             true,
             purplePlopCommand,
-//            yellowPlaceCommand
+            yellowPlaceCommand
         ).thenStopOpMode().schedule()
     }
 }
