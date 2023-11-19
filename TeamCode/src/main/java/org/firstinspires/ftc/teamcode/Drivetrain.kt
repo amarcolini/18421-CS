@@ -49,7 +49,7 @@ class Drivetrain(
     )
 
     val trajectoryFollower: TrajectoryFollower = HolonomicPIDVAFollower(
-        axialCoeffs, lateralCoeffs, headingCoeffs, Pose2d(0.5, 0.5, 3.deg), 0.5
+        axialCoeffs, lateralCoeffs, headingCoeffs, Pose2d(0.5, 0.5, 2.deg), 0.5
     )
 
     private val poseHistory = ArrayList<Pose2d>()
@@ -161,7 +161,7 @@ class Drivetrain(
 
         val axialCoeffs = PIDCoefficients(8.0, 0.0, 0.2)
         val lateralCoeffs = PIDCoefficients(8.0, 0.0, 0.2)
-        val headingCoeffs = PIDCoefficients(8.0, 0.0, 0.2)
+        val headingCoeffs = PIDCoefficients(6.0, 0.0, 0.2)
     }
 
     init {

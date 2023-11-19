@@ -11,6 +11,7 @@ class Outtake(
     companion object {
         private val resetPosition = 0.93
         private val primePosition = 0.93
+        private val initPosition = 0.7
         private val outtakePosition = 0.3
         private val leftOpen = 1.0
         private val rightOpen = 0.0
@@ -72,6 +73,11 @@ class Outtake(
 
     fun ready() {
         primeArm()
+        close()
+    }
+
+    fun init() {
+        armServo.position = initPosition
         close()
     }
 }

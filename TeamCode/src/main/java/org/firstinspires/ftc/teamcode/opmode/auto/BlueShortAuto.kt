@@ -21,16 +21,17 @@ class BlueShortAuto : CommandOpMode() {
 
     companion object {
         var startPose = Pose2d(16.0, 3 * tile - 9.0, (-90).deg)
-        var rightPlopPose = Pose2d(9.5, 32.0, (180).deg)
-        var rightPlacePose = Pose2d(52.0, 32.0, 5.deg)
+        var rightPlopPose = Pose2d(9.5, 34.0, (180).deg)
+        var rightPlacePose = Pose2d(53.0, 35.0, 10.deg)
         var centerPlopPose = Pose2d(16.0, 34.5, (-90).deg)
         var centerPlacePose = Pose2d(52.0, 41.0, 0.deg)
         var leftPlopPose = Pose2d(26.0, 46.0, (-90).deg)
         var leftPlacePose = Pose2d(52.0, 48.0, 0.deg)
+        var parkPose = Pose2d(52.0, 60.0, 0.deg)
     }
 
     override fun preInit() {
-        robot.outtake.ready()
+        robot.outtake.init()
         robot.pixelPlopper.prime()
         robot.webcam.openCameraDeviceAsync(object : OpenCvCamera.AsyncCameraOpenListener {
             override fun onOpened() {
@@ -58,6 +59,7 @@ class BlueShortAuto : CommandOpMode() {
 
     override fun preStart() {
         cancelAll()
+        robot.outtake.ready()
         robot.drive.poseEstimate = startPose
 
         val (plopPose, placePose) = when (pipeline.lastKnownLocation) {
@@ -74,6 +76,10 @@ class BlueShortAuto : CommandOpMode() {
                 .back(3.0)
                 .lineToSplineHeading(placePose)
                 .build()
+        val parkTrajectory =
+            robot.drive.trajectoryBuilder(yellowPlaceTrajectory.end())
+                .lineToSplineHeading(parkPose)
+                .build()
 
         val purplePlopCommand = robot.drive.followTrajectory(purplePlopTrajectory)
             .then(robot.pixelPlopper.plop())
@@ -82,9 +88,10 @@ class BlueShortAuto : CommandOpMode() {
             .then(robot.outtake::extend)
             .wait(2.0)
             .then(robot.outtake::releaseRight)
-            .wait(2.0)
+            .wait(1.0)
             .then(robot.outtake::reset)
-            .wait(2.0)
+            .wait(1.0)
+            .then(robot.drive.followTrajectory(parkTrajectory))
 
         SequentialCommand(
             true,

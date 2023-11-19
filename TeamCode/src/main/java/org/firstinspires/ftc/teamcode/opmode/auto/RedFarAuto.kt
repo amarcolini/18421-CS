@@ -32,7 +32,7 @@ class RedFarAuto : CommandOpMode() {
     }
 
     override fun preInit() {
-        robot.outtake.ready()
+        robot.outtake.init()
         robot.pixelPlopper.prime()
         robot.webcam.openCameraDeviceAsync(object : OpenCvCamera.AsyncCameraOpenListener {
             override fun onOpened() {
@@ -60,6 +60,7 @@ class RedFarAuto : CommandOpMode() {
 
     override fun preStart() {
         cancelAll()
+        robot.outtake.ready()
         robot.drive.poseEstimate = startPose
 
         val (plopPose, placePose) = when (pipeline.lastKnownLocation) {

@@ -11,7 +11,7 @@ class AxonTest : CommandOpMode() {
     private val robot by robot<CSRobot>()
 
     companion object {
-        var targetPosition = 0.0
+        var targetPosition = 0.5
     }
 
     override fun preInit() {

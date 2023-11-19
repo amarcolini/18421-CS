@@ -15,19 +15,20 @@ import org.openftc.easyopencv.OpenCvCameraRotation
 
 @Autonomous
 @JoosConfig
-class RedShortAuto : CommandOpMode() {
+class BlueFarPurpleAuto : CommandOpMode() {
     private val robot by robot<CSRobot>()
     private val pipeline = PropPipeline(false)
 
     companion object {
         var startPose = Pose2d(16.0, -3 * tile + 9.0, (90).deg)
         var rightPlopPose = Pose2d(24.0, -42.0, (90).deg)
-        var rightPlacePose = Pose2d(52.0, -45.0, 0.deg)
+
+        //        var rightPlacePose = Pose2d(52.0, -45.0, 0.deg)
         var centerPlopPose = Pose2d(16.0, -35.0, (90).deg)
-        var centerPlacePose = Pose2d(52.0, -37.0, 0.deg)
+
+        //        var centerPlacePose = Pose2d(52.0, -37.0, 0.deg)
         var leftPlopPose = Pose2d(10.0, -36.0, (180).deg)
-        var leftPlacePose = Pose2d(52.0, -29.0, 0.deg)
-        var parkPose = Pose2d(52.0, -60.0, 0.deg)
+//        var leftPlacePose = Pose2d(52.0, -29.0, 0.deg)
     }
 
     override fun preInit() {
@@ -62,41 +63,43 @@ class RedShortAuto : CommandOpMode() {
         robot.outtake.ready()
         robot.drive.poseEstimate = startPose
 
-        val (plopPose, placePose) = when (pipeline.lastKnownLocation) {
-            PropPipeline.PropLocation.Left -> leftPlopPose to leftPlacePose
-            PropPipeline.PropLocation.Center -> centerPlopPose to centerPlacePose
-            PropPipeline.PropLocation.Right -> rightPlopPose to rightPlacePose
+        val plopPose = when (pipeline.lastKnownLocation) {
+            PropPipeline.PropLocation.Left -> leftPlopPose // to leftPlacePose
+            PropPipeline.PropLocation.Center -> centerPlopPose // to centerPlacePose
+            PropPipeline.PropLocation.Right -> rightPlopPose // to rightPlacePose
         }
         val purplePlopTrajectory =
             robot.drive.trajectoryBuilder(startPose)
                 .lineToSplineHeading(plopPose)
                 .build()
-        val yellowPlaceTrajectory =
-            robot.drive.trajectoryBuilder(purplePlopTrajectory.end())
-                .back(3.0)
-                .lineToSplineHeading(placePose)
-                .build()
-        val parkTrajectory =
-            robot.drive.trajectoryBuilder(yellowPlaceTrajectory.end())
-                .lineToSplineHeading(parkPose)
-                .build()
+//        val yellowPlaceTrajectory =
+//            robot.drive.trajectoryBuilder(purplePlopTrajectory.end())
+//                .back(3.0)
+//                .lineToSplineHeading(placePose)
+//                .build()
 
         val purplePlopCommand = robot.drive.followTrajectory(purplePlopTrajectory)
             .then(robot.pixelPlopper.plop())
+            .then(
+                robot.drive.followTrajectory(
+                    robot.drive.trajectoryBuilder(purplePlopTrajectory.end())
+                        .back(3.0)
+                        .build()
+                )
+            )
 
-        val yellowPlaceCommand = robot.drive.followTrajectory(yellowPlaceTrajectory)
-            .then(robot.outtake::extend)
-            .wait(2.0)
-            .then(robot.outtake::releaseRight)
-            .wait(1.0)
-            .then(robot.outtake::reset)
-            .wait(1.0)
-            .then(robot.drive.followTrajectory(parkTrajectory))
+//        val yellowPlaceCommand = robot.drive.followTrajectory(yellowPlaceTrajectory)
+//            .then(robot.outtake::extend)
+//            .wait(2.0)
+//            .then(robot.outtake::releaseRight)
+//            .wait(2.0)
+//            .then(robot.outtake::reset)
+//            .wait(2.0)
 
         SequentialCommand(
             true,
             purplePlopCommand,
-            yellowPlaceCommand
+//            yellowPlaceCommand
         ).thenStopOpMode().schedule()
     }
 }
