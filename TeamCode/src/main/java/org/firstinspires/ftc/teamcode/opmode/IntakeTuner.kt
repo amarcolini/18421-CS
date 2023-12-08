@@ -8,23 +8,18 @@ import org.firstinspires.ftc.teamcode.CSRobot
 
 @JoosConfig
 @TeleOp(group = "lol")
-class LiftTuner : CommandOpMode() {
+class IntakeTuner : CommandOpMode() {
     private val robot by robot<CSRobot>()
 
     companion object {
         var targetPosition = 0.0
+        var motorPower = 0.0
     }
 
     override fun preInit() {
-        robot.verticalExtension.positionControlEnabled = true
-
-        robot.verticalExtension.initializeEncoders().then(Command.of {
-            robot.verticalExtension.setTargetPosition(targetPosition)
-            telem.addLine("initialization complete!")
-        }.runForever().requires(robot.verticalExtension)).schedule()
-
         schedule(true) {
-            telem.addData("bottomSensor", robot.verticalExtension.bottomSensor.state)
+            robot.intake.motor.power = motorPower
+            robot.intake.servo.position = targetPosition
         }
 
         map(gamepad.p1.run { a or cross }::justActivated, ::stopOpMode)

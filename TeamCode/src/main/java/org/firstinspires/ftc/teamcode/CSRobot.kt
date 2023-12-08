@@ -32,8 +32,12 @@ class CSRobot : Robot() {
             hMap, Motor.Type.GOBILDA_435,
             "lift_left" to true,
             "lift_right" to false
-        )
+        ),
+        hMap("lift_sensor")
     )
+
+    val intake =
+        Intake(Motor(hMap, "intake_motor", Motor.Type.GOBILDA_1620), Servo(hMap, "intake_servo"))
 
     val outtake = Outtake(
         Servo(hMap, "axon"),
@@ -55,7 +59,7 @@ class CSRobot : Robot() {
 
     private val lynxModules = hMap.getAll<LynxModule>()
     override fun init() {
-        register(drive, verticalExtension, outtake, droneLauncher, pixelPlopper)
+        register(drive, verticalExtension, intake, outtake, droneLauncher, pixelPlopper)
 
         verticalExtension.motors.resetEncoders()
 
