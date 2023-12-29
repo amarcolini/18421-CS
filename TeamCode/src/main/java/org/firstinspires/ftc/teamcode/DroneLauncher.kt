@@ -8,7 +8,7 @@ import com.amarcolini.joos.hardware.Servo
 class DroneLauncher(private val servo: Servo) : AbstractComponent() {
 
     companion object {
-        var closePosition = 0.05
+        var closePosition = 1.0
         var openPosition = 0.4
     }
 

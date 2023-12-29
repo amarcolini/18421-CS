@@ -16,16 +16,10 @@ import com.amarcolini.joos.geometry.Angle
 import com.amarcolini.joos.geometry.Pose2d
 import com.amarcolini.joos.geometry.Vector2d
 import com.amarcolini.joos.hardware.Motor
-import com.amarcolini.joos.util.cos
-import com.amarcolini.joos.util.deg
-import com.amarcolini.joos.util.rad
-import com.amarcolini.joos.util.sin
+import com.amarcolini.joos.util.*
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp
 import com.qualcomm.robotcore.hardware.IMU
-import org.apache.commons.math3.linear.Array2DRowRealMatrix
-import org.apache.commons.math3.linear.ArrayRealVector
-import org.apache.commons.math3.linear.QRDecomposition
 import org.firstinspires.ftc.teamcode.CSRobot
 import org.firstinspires.ftc.teamcode.Drivetrain
 
@@ -89,7 +83,7 @@ class LocalizationTest : CommandOpMode() {
                 Pose2d(
                     -leftStick.y,
                     -leftStick.x,
-                    -rightStick.x
+                    -rightStick.x.rad
                 )
             )
 
@@ -132,31 +126,23 @@ class AngularRampLogger : CommandOpMode() {
                     t > totalTime
                 },
                 Command.of {
-                    val leftConstants = ArrayRealVector(leftVels.toDoubleArray())
-                    val rightConstants = ArrayRealVector(rightVels.toDoubleArray())
-                    val perpConstants = ArrayRealVector(perpVels.toDoubleArray())
                     telem.addData("heading", angVels).setRetained(true)
-                    telem.addData("left", leftConstants).setRetained(true)
-                    telem.addData("right", rightConstants).setRetained(true)
-                    telem.addData("perp", perpConstants).setRetained(true)
+                    telem.addData("left", leftVels).setRetained(true)
+                    telem.addData("right", rightVels).setRetained(true)
+                    telem.addData("perp", perpVels).setRetained(true)
                     telem.update()
-
-                    val coefficients = Array2DRowRealMatrix(angVels.map {
-                        doubleArrayOf(it)
-                    }.toTypedArray())
-                    val solver = QRDecomposition(coefficients).solver
 
                     data class WheelData(
                         val name: String,
-                        val data: ArrayRealVector,
+                        val data: List<Double>,
                         val phi: Angle,
                     )
                     listOf(
-                        WheelData("left", leftConstants, Drivetrain.leftPose.heading),
-                        WheelData("right", rightConstants, Drivetrain.rightPose.heading),
-                        WheelData("perp", perpConstants, Drivetrain.perpPose.heading)
+                        WheelData("left", leftVels, Drivetrain.leftPose.heading),
+                        WheelData("right", rightVels, Drivetrain.rightPose.heading),
+                        WheelData("perp", perpVels, Drivetrain.perpPose.heading)
                     ).forEach { (name, data, phi) ->
-                        val solution = solver.solve(data).getEntry(0)
+                        val solution = doLinearRegressionNoIntercept(angVels, data)
                         val pos = Vector2d(solution * sin(phi), -solution * cos(phi))
                         telem.addData("$name solution", solution).setRetained(true)
                         telem.addData("$name pos", pos).setRetained(true)
@@ -219,7 +205,7 @@ class ManualFeedforwardTuner : CommandOpMode() {
                 Pose2d(
                     -leftStick.y,
                     -leftStick.x,
-                    -rightStick.x
+                    -rightStick.x.rad
                 )
             )
         }.runForever().requires(robot.drive)

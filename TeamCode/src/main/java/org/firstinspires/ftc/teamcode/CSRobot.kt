@@ -1,14 +1,19 @@
 package org.firstinspires.ftc.teamcode
 
-import com.amarcolini.joos.extensions.*
+import com.amarcolini.joos.command.CommandScheduler.telem
 import com.amarcolini.joos.command.Component
 import com.amarcolini.joos.command.Robot
 import com.amarcolini.joos.extensions.getAll
+import com.amarcolini.joos.extensions.invoke
 import com.amarcolini.joos.hardware.Motor
 import com.amarcolini.joos.hardware.MotorGroup
 import com.amarcolini.joos.hardware.Servo
+import com.amarcolini.joos.util.NanoClock
 import com.qualcomm.hardware.lynx.LynxModule
+import org.firstinspires.ftc.vision.VisionPortal
+import org.firstinspires.ftc.vision.VisionPortalImpl
 import org.openftc.easyopencv.OpenCvCameraFactory
+import kotlin.math.roundToInt
 
 class CSRobot : Robot() {
     val drive = Drivetrain(
@@ -68,10 +73,15 @@ class CSRobot : Robot() {
         lynxModules.forEach {
             it.bulkCachingMode = LynxModule.BulkCachingMode.MANUAL
         }
+        val clock = NanoClock.system
+        var lastTimestamp = clock.seconds()
         register(Component.of {
             lynxModules.forEach {
                 it.clearBulkCache()
             }
+            val now = clock.seconds()
+            telem.addData("Loop hZ", (1.0 / (now - lastTimestamp)).roundToInt())
+            lastTimestamp = now
         })
     }
 }

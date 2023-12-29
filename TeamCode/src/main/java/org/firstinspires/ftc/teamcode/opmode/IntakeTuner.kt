@@ -1,6 +1,5 @@
 package org.firstinspires.ftc.teamcode.opmode
 
-import com.amarcolini.joos.command.Command
 import com.amarcolini.joos.command.CommandOpMode
 import com.amarcolini.joos.dashboard.JoosConfig
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp

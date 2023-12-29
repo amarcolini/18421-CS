@@ -1,7 +1,6 @@
 package org.firstinspires.ftc.teamcode
 
 import com.amarcolini.joos.command.Command
-import com.amarcolini.joos.command.CommandScheduler
 import com.amarcolini.joos.command.CommandScheduler.telem
 import com.amarcolini.joos.command.Component
 import com.amarcolini.joos.command.FunctionalCommand
@@ -9,7 +8,6 @@ import com.amarcolini.joos.control.DCMotorFeedforward
 import com.amarcolini.joos.control.PIDCoefficients
 import com.amarcolini.joos.dashboard.JoosConfig
 import com.amarcolini.joos.drive.AbstractMecanumDrive
-import com.amarcolini.joos.drive.Drive
 import com.amarcolini.joos.drive.DriveSignal
 import com.amarcolini.joos.followers.HolonomicPIDVAFollower
 import com.amarcolini.joos.followers.TrajectoryFollower
@@ -17,14 +15,10 @@ import com.amarcolini.joos.geometry.Angle
 import com.amarcolini.joos.geometry.Pose2d
 import com.amarcolini.joos.hardware.Motor
 import com.amarcolini.joos.hardware.MotorGroup
-import com.amarcolini.joos.hardware.drive.DriveComponent
-import com.amarcolini.joos.localization.AngleSensor
-import com.amarcolini.joos.localization.Localizer
 import com.amarcolini.joos.localization.ThreeTrackingWheelLocalizer
 import com.amarcolini.joos.trajectory.Trajectory
 import com.amarcolini.joos.trajectory.TrajectoryBuilder
 import com.amarcolini.joos.trajectory.constraints.MecanumConstraints
-import com.amarcolini.joos.trajectory.constraints.TrajectoryConstraints
 import com.amarcolini.joos.util.deg
 
 @JoosConfig
@@ -70,10 +64,10 @@ class Drivetrain(
         if (dashboardEnabled) {
             val trajectory = getCurrentTrajectory()
             if (trajectory != null) {
+                telem.drawSampledTrajectory(trajectory, pathColor, turnColor, waitColor)
                 poseHistory.add(poseEstimate)
                 if (poseHistoryLimit > -1 && poseHistory.size > poseHistoryLimit)
                     poseHistory.removeFirst()
-                telem.drawSampledTrajectory(trajectory, pathColor, turnColor, waitColor)
                 telem.drawPoseHistory(poseHistory, robotColor)
                 telem.drawRobot(trajectory[trajectoryFollower.elapsedTime()], pathColor)
             }
@@ -97,17 +91,6 @@ class Drivetrain(
         constraints.maxAngVel, constraints.maxAngAccel, constraints.maxAngJerk
     )
 
-    /**
-     * Returns a [TrajectoryBuilder] with the constraints of this drive.
-     *
-     * @param startTangent the starting tangent in degrees or radians as specified by [Angle.defaultUnits]
-     */
-    @JvmOverloads
-    fun trajectoryBuilder(
-        startPose: Pose2d = poseEstimate,
-        startTangent: Double
-    ): TrajectoryBuilder =
-        trajectoryBuilder(startPose, Angle(startTangent))
 
     /**
      * Returns a [TrajectoryBuilder] with the constraints of this drive.
