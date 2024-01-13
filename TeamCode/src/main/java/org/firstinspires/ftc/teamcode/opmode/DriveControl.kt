@@ -14,15 +14,13 @@ import kotlin.math.pow
 @TeleOp(name = "DriveControl", group = "Official")
 class DriveControl : CommandOpMode() {
     private val robot by robot<CSRobot>()
-
-    companion object {
-        var intakePosition = 0.0
+    override fun preInit() {
+        robot.pixelPlopper.prime()
+        robot.outtake.reset().schedule()
+        robot.verticalExtension.initializeEncoders().schedule()
     }
 
-    override fun preInit() {
-        robot.outtake.reset()
-        robot.pixelPlopper.prime()
-
+    override fun preStart() {
         schedule(true) {
             val leftStick = gamepad.p1.getLeftStick()
             val rightStick = gamepad.p1.getRightStick()
@@ -37,36 +35,44 @@ class DriveControl : CommandOpMode() {
 
             val leftTrigger = gamepad.p1.left_trigger.value
             val rightTrigger = gamepad.p1.right_trigger.value
+            var power = (rightTrigger - leftTrigger).pow(3).toDouble() * 1.0 + 0.1
+            if (!robot.verticalExtension.bottomSensor.state && power < 0) power = 0.0
             robot.verticalExtension.motors.setPower(
-                (rightTrigger - leftTrigger).pow(3).toDouble() * 1.0 + 0.1
+                power
             )
-
-            robot.intake.servo.position = intakePosition
         }
 
-        map(gamepad.p1 { (y or triangle)::justActivated }, Command.of {
+        map(gamepad.p1.y0::isJustActivated, Command.select {
             if (robot.outtake.isExtended) robot.outtake.resetArm()
             else robot.outtake.extend()
         })
 
-        map(gamepad.p1.left_bumper::justActivated, robot.outtake::releaseLeft)
-        map(gamepad.p1.right_bumper::justActivated, robot.outtake::releaseRight)
+        map(gamepad.p1.left_bumper::isJustActivated, robot.outtake::releaseLeft)
+        map(gamepad.p1.right_bumper::isJustActivated, robot.outtake::releaseRight)
 
-        map(gamepad.p1 { (b or circle)::justActivated }, robot.outtake::ready)
+        map(gamepad.p1.b0::isJustActivated, robot.transfer())
 
-        map(gamepad.p1 { (a or cross)::justActivated }) {
-            robot.intake.motorState = when (robot.intake.motorState) {
-                Intake.MotorState.ACTIVE -> Intake.MotorState.STOP
-                else -> Intake.MotorState.ACTIVE
+        map(gamepad.p1.a0::isJustActivated, Command.select(robot.intake) {
+            when (robot.intake.motorState) {
+                Intake.MotorState.ACTIVE -> robot.intake.stop()
+                else -> robot.intake.intake()
             }
-        }
+        })
+        map(gamepad.p1.x0::isJustActivated, Command.select(robot.intake) {
+            when (robot.intake.servoState) {
+                Intake.ServoState.DOWN -> robot.intake.waitForServoState(Intake.ServoState.UP)
+                Intake.ServoState.UP -> robot.intake.waitForServoState(Intake.ServoState.DOWN)
+            }
+        })
+        map(gamepad.p1.dpad_left::isJustActivated, robot.intake.reverse())
 
-        map(gamepad.p1.dpad_up::justActivated, robot.droneLauncher::launch)
-        map(gamepad.p1.dpad_down::justActivated, robot.droneLauncher::reset)
+        map(gamepad.p1.dpad_up::isJustActivated, robot.droneLauncher::launch)
+        map(gamepad.p1.dpad_down::isJustActivated, robot.droneLauncher::reset)
 
-        map(gamepad.p1.dpad_left::justActivated) {
-            if (robot.pixelPlopper.isPrimed) robot.pixelPlopper.open()
-            else robot.pixelPlopper.prime()
-        }
+//        map(gamepad.p1.dpad_left::isJustActivated) {
+//            if (robot.pixelPlopper.isPrimed) robot.pixelPlopper.open()
+//            else robot.pixelPlopper.prime()
+//        }
+        map(gamepad.p1.dpad_right::isJustActivated, robot.outtake.prepareClimb())
     }
 }

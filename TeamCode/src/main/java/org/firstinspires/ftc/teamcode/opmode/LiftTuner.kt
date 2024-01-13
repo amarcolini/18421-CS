@@ -27,6 +27,6 @@ class LiftTuner : CommandOpMode() {
             telem.addData("bottomSensor", robot.verticalExtension.bottomSensor.state)
         }
 
-        map(gamepad.p1.run { a or cross }::justActivated, ::stopOpMode)
+        map(gamepad.p1.a0::isJustActivated, ::stopOpMode)
     }
 }

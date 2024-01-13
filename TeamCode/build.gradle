@@ -12,6 +12,15 @@
 // Custom definitions may go here
 buildscript {
     ext.kotlin_version = "1.8.20"
+    repositories {
+        mavenCentral()
+        maven {
+            url = 'https://www.matthewo.tech/maven/'
+        }
+    }
+    dependencies {
+        classpath 'org.team11260:fast-load-plugin:0.1.2'
+    }
 }
 
 plugins {
@@ -24,11 +33,15 @@ repositories {
     maven { url = uri("C:/Users/Alessandro/IdeaProjects/joos/testRepo") }
 //    maven { url = 'https://jitpack.io' }
     maven { url = 'https://maven.brott.dev/' }
+    maven {
+        url = 'https://www.matthewo.tech/maven/'
+    }
 }
 
 // Include common definitions from above.
 apply from: '../build.common.gradle'
 apply from: '../build.dependencies.gradle'
+apply plugin: 'org.team11260.fast-load-plugin'
 
 android {
     namespace = 'org.firstinspires.ftc.teamcode'
@@ -44,5 +57,6 @@ dependencies {
 
     implementation "com.amarcolini.joos:command:0.4.9"
     ksp "com.amarcolini.joos.command:annotation:0.4.9"
+    implementation 'org.team11260:fast-load:0.1.2'
 //    implementation "org.jetbrains.kotlin:kotlin-reflect:1.9.20"
 }

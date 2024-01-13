@@ -9,17 +9,21 @@ import com.amarcolini.joos.control.PIDCoefficients
 import com.amarcolini.joos.dashboard.JoosConfig
 import com.amarcolini.joos.drive.AbstractMecanumDrive
 import com.amarcolini.joos.drive.DriveSignal
+import com.amarcolini.joos.followers.HolonomicGVFFollower
 import com.amarcolini.joos.followers.HolonomicPIDVAFollower
+import com.amarcolini.joos.followers.PathFollower
 import com.amarcolini.joos.followers.TrajectoryFollower
 import com.amarcolini.joos.geometry.Angle
 import com.amarcolini.joos.geometry.Pose2d
 import com.amarcolini.joos.hardware.Motor
 import com.amarcolini.joos.hardware.MotorGroup
+import com.amarcolini.joos.hardware.drive.DrivePathFollower
 import com.amarcolini.joos.localization.ThreeTrackingWheelLocalizer
 import com.amarcolini.joos.trajectory.Trajectory
 import com.amarcolini.joos.trajectory.TrajectoryBuilder
 import com.amarcolini.joos.trajectory.constraints.MecanumConstraints
 import com.amarcolini.joos.util.deg
+import org.firstinspires.ftc.teamcode.opmode.auto.GVFTest
 
 @JoosConfig
 class Drivetrain(
@@ -27,7 +31,7 @@ class Drivetrain(
     val encoders: List<Motor.Encoder>
 ) : AbstractMecanumDrive(
     Companion.trackWidth, Companion.trackWidth, Companion.lateralMultiplier
-), Component {
+), Component, DrivePathFollower {
     val parallelEncoders = listOf(encoders[0], encoders[1])
     val perpEncoder = encoders[2]
 
@@ -58,6 +62,24 @@ class Drivetrain(
      */
     var dashboardEnabled: Boolean = true
     var poseHistoryLimit: Int = 100
+
+    override var pathFollower: PathFollower = HolonomicGVFFollower(
+        constraints.maxVel,
+        constraints.maxAccel,
+        constraints.maxAccel,
+        constraints.maxAngVel,
+        constraints.maxAngAccel,
+        Pose2d(0.5, 0.5, 5.deg),
+        GVFTest.kN, GVFTest.kOmega, GVFTest.kX, GVFTest.kY, GVFTest.pidCoefficients,
+    )
+
+    override fun setRunMode(runMode: Motor.RunMode) {
+        motors.runMode = runMode
+    }
+
+    override fun setZeroPowerBehavior(zeroPowerBehavior: Motor.ZeroPowerBehavior) {
+        motors.zeroPowerBehavior = zeroPowerBehavior
+    }
 
     override fun update() {
         updatePoseEstimate()
@@ -135,7 +157,7 @@ class Drivetrain(
 
     companion object {
         val feedforwardCoeffs = DCMotorFeedforward(0.017, 0.0002, 0.05)
-        var distPerTick = 0.0029651
+        var distPerTick = 0.002956143499653
         var leftPose = Pose2d(0.0, 7.325, 0.deg)
         var rightPose = Pose2d(0.0, -7.325, 0.deg)
         var perpPose = Pose2d(5.801, 0.0, (-90).deg)

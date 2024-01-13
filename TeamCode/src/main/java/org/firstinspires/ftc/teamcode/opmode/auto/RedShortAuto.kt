@@ -26,7 +26,7 @@ class RedShortAuto : CommandOpMode() {
         var centerPlopPose = Pose2d(16.0, -35.0, (90).deg)
         var centerPlacePose = Pose2d(52.0, -37.0, 0.deg)
         var leftPlopPose = Pose2d(10.0, -36.0, (180).deg)
-        var leftPlacePose = Pose2d(52.0, -29.0, 0.deg)
+        var leftPlacePose = Pose2d(52.0, -27.0, 0.deg)
         var parkPose = Pose2d(52.0, -60.0, 0.deg)
     }
 
@@ -85,11 +85,11 @@ class RedShortAuto : CommandOpMode() {
             .then(robot.pixelPlopper.plop())
 
         val yellowPlaceCommand = robot.drive.followTrajectory(yellowPlaceTrajectory)
-            .then(robot.outtake::extend)
+            .then(robot.outtake.extend())
             .wait(2.0)
             .then(robot.outtake::releaseRight)
             .wait(1.0)
-            .then(robot.outtake::reset)
+            .then(robot.outtake.reset())
             .wait(1.0)
             .then(robot.drive.followTrajectory(parkTrajectory))
 

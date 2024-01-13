@@ -1,7 +1,8 @@
 package org.firstinspires.ftc.teamcode
 
 import com.amarcolini.joos.command.AbstractComponent
-import com.amarcolini.joos.dashboard.JoosConfig
+import com.amarcolini.joos.command.Command
+import com.amarcolini.joos.command.InstantCommand
 import com.amarcolini.joos.hardware.Servo
 
 class Outtake(
@@ -9,14 +10,14 @@ class Outtake(
     val rightServo: Servo
 ) : AbstractComponent() {
     companion object {
-        private val resetPosition = 0.93
-        private val primePosition = 0.93
         private val initPosition = 0.7
-        private val outtakePosition = 0.3
-        private val leftOpen = 1.0
-        private val rightOpen = 0.0
-        private val leftClose = 0.5
-        private val rightClose = 0.5
+        private val outtakePosition = 0.35
+        private val armNeutral = 0.93
+        private val armTransfer = 0.94
+        private val rightPositions = arrayOf(0.37, 0.5, 0.7)
+        private val leftPositions = arrayOf(0.98, 0.85, 0.68)
+        var climbPosition = 0.6
+        var armSpeed = 0.5
     }
 
     var isLeftOpen = true
@@ -32,12 +33,12 @@ class Outtake(
 
     fun releaseLeft() {
         isLeftOpen = true
-        leftServo.position = leftOpen
+        leftServo.position = leftPositions[1]
     }
 
     fun releaseRight() {
         isRightOpen = true
-        rightServo.position = rightOpen
+        rightServo.position = rightPositions[1]
     }
 
     fun open() {
@@ -48,33 +49,38 @@ class Outtake(
     private fun close() {
         isLeftOpen = false
         isRightOpen = false
-        leftServo.position = leftClose
-        rightServo.position = rightClose
+        leftServo.position = leftPositions[2]
+        rightServo.position = rightPositions[2]
     }
 
-    fun resetArm() {
+    fun stopPixels() {
+        leftServo.position = leftPositions[0]
+        rightServo.position = rightPositions[0]
+    }
+
+    fun prepareTransfer() = Command.select {
+        stopPixels()
+        armServo.waitForPosition(armTransfer, armSpeed)
+    }
+
+    fun prepareClimb() = armServo.waitForPosition(climbPosition, armSpeed)
+
+    fun resetArm() = Command.select {
         isExtended = false
-        armServo.position = resetPosition
+        armServo.waitForPosition(armNeutral, armSpeed)
     }
 
-    fun extend() {
+    fun extend() = Command.select {
         isExtended = true
-        armServo.position = outtakePosition
+        armServo.waitForPosition(outtakePosition, armSpeed)
     }
 
-    private fun primeArm() {
-        armServo.position = primePosition
-    }
-
-    fun reset() {
+    fun reset() = Command.select {
+        stopPixels()
         resetArm()
-        open()
     }
 
-    fun ready() {
-        primeArm()
-        close()
-    }
+    fun ready() = InstantCommand(::close).wait(0.5) then resetArm()
 
     fun init() {
         armServo.position = initPosition

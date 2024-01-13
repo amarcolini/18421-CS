@@ -1,8 +1,7 @@
 package org.firstinspires.ftc.teamcode
 
+import com.amarcolini.joos.command.*
 import com.amarcolini.joos.command.CommandScheduler.telem
-import com.amarcolini.joos.command.Component
-import com.amarcolini.joos.command.Robot
 import com.amarcolini.joos.extensions.getAll
 import com.amarcolini.joos.extensions.invoke
 import com.amarcolini.joos.hardware.Motor
@@ -10,8 +9,7 @@ import com.amarcolini.joos.hardware.MotorGroup
 import com.amarcolini.joos.hardware.Servo
 import com.amarcolini.joos.util.NanoClock
 import com.qualcomm.hardware.lynx.LynxModule
-import org.firstinspires.ftc.vision.VisionPortal
-import org.firstinspires.ftc.vision.VisionPortalImpl
+import org.firstinspires.ftc.teamcode.opmode.TransferTest
 import org.openftc.easyopencv.OpenCvCameraFactory
 import kotlin.math.roundToInt
 
@@ -42,7 +40,12 @@ class CSRobot : Robot() {
     )
 
     val intake =
-        Intake(Motor(hMap, "intake_motor", Motor.Type.GOBILDA_1620), Servo(hMap, "intake_servo"))
+        Intake(
+            Motor(hMap, "intake_motor", Motor.Type.GOBILDA_1620),
+            Servo(hMap, "intake_servo"),
+            hMap("color_left"),
+            hMap("color_right"),
+        )
 
     val outtake = Outtake(
         Servo(hMap, "axon"),
@@ -83,5 +86,18 @@ class CSRobot : Robot() {
             telem.addData("Loop hZ", (1.0 / (now - lastTimestamp)).roundToInt())
             lastTimestamp = now
         })
+    }
+
+    fun transfer(): Command {
+        return SequentialCommand(
+            (intake.waitForServoState(Intake.ServoState.UP) and outtake.reset() and {
+                intake.motorState = Intake.MotorState.ACTIVE
+            }),
+            InstantCommand { intake.motorState = Intake.MotorState.STOPPED },
+            WaitCommand(0.3),
+            outtake.prepareTransfer(),
+            WaitCommand(1.5).onInit { intake.motorState = Intake.MotorState.REVERSE },
+            outtake.ready() and WaitCommand(0.3).then(intake.stop()),
+        ).requires(intake, outtake).setInterruptable(false)
     }
 }

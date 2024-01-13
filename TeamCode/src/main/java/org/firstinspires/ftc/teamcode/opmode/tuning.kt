@@ -217,8 +217,8 @@ class ManualFeedforwardTuner : CommandOpMode() {
         }.repeatForever()
 
         schedule(tuningCommand, loggingCommand)
-        map(gamepad.p1 { (y or triangle)::justActivated }, resettingCommand)
-        map(gamepad.p1 { (b or circle)::justActivated }, tuningCommand)
+        map(gamepad.p1.y0::isJustActivated, resettingCommand)
+        map(gamepad.p1.b0::isJustActivated, tuningCommand)
     }
 }
 

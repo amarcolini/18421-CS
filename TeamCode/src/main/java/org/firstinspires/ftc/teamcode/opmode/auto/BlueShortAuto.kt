@@ -85,11 +85,11 @@ class BlueShortAuto : CommandOpMode() {
             .then(robot.pixelPlopper.plop())
 
         val yellowPlaceCommand = robot.drive.followTrajectory(yellowPlaceTrajectory)
-            .then(robot.outtake::extend)
+            .then(robot.outtake.extend())
             .wait(2.0)
             .then(robot.outtake::releaseRight)
             .wait(1.0)
-            .then(robot.outtake::reset)
+            .then(robot.outtake.reset())
             .wait(1.0)
             .then(robot.drive.followTrajectory(parkTrajectory))
 

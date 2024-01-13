@@ -6,10 +6,9 @@ import com.amarcolini.joos.hardware.Servo
 
 @JoosConfig
 class DroneLauncher(private val servo: Servo) : AbstractComponent() {
-
     companion object {
-        var closePosition = 1.0
-        var openPosition = 0.4
+        var closePosition = 0.4
+        var openPosition = 1.0
     }
 
     init {
