@@ -107,7 +107,7 @@ class Intake(
         waitForServoState(ServoState.DOWN).then { motorState = MotorState.ACTIVE }
 
     fun reverse(): Command =
-        waitForServoState(ServoState.DOWN).then { motorState = MotorState.ACTIVE }
+        waitForServoState(ServoState.DOWN).then { motorState = MotorState.REVERSE }
 
     fun stop(): Command = Command.of {
         motorState = MotorState.STOPPED
@@ -120,11 +120,9 @@ class Intake(
         val now = NanoClock.system.seconds()
         val last = lastUpdateTimestamp
         if ((last == null || now - last > 0.1) && (motorState == MotorState.ACTIVE && servoState == ServoState.DOWN)) {
-            numPixels = if (leftSensor.getDistance(DistanceUnit.MM) < 8.0) 1 else 0 +
-                    if (rightSensor.getDistance(DistanceUnit.MM) < 8.0) 1 else 0
+            numPixels = (if (leftSensor.getDistance(DistanceUnit.MM) < 8.0) 1 else 0) +
+                    (if (rightSensor.getDistance(DistanceUnit.MM) < 8.0) 1 else 0)
             lastUpdateTimestamp = now
         }
-        telem.addData("currentTarget", currentTarget)
-        telem.addData("currentPosition", servo.position)
     }
 }

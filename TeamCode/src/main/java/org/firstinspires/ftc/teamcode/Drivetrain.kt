@@ -41,7 +41,7 @@ class Drivetrain(
         wheelBase,
         lateralMultiplier,
         48.0,
-        38.0,
+        45.0,
         280.deg,
         250.deg
     )

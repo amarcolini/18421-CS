@@ -1,8 +1,10 @@
 package org.firstinspires.ftc.teamcode.opmode.auto
 
 import com.acmerobotics.dashboard.FtcDashboard
+import com.amarcolini.joos.command.Command
 import com.amarcolini.joos.command.CommandOpMode
 import com.amarcolini.joos.command.SequentialCommand
+import com.amarcolini.joos.command.WaitCommand
 import com.amarcolini.joos.dashboard.JoosConfig
 import com.amarcolini.joos.geometry.Pose2d
 import com.amarcolini.joos.path.PathBuilder
@@ -23,11 +25,11 @@ class RedFarYellowAuto2 : CommandOpMode() {
     companion object {
         var startPose = Pose2d(-16.0, -3 * tile + 9.0, (90).deg)
         var leftPlopPose = Pose2d(-15.5, -33.0, (180).deg)
-        var centerPlopPose = Pose2d(-25.0, -28.0, (0).deg)
+        var centerPlopPose = Pose2d(-25.0, -25.0, (0).deg)
         var rightPlopPose = Pose2d(-10.5, -35.0, (0).deg)
-        var leftPlacePose = Pose2d(72.0, -37.0, (-5).deg)
-        var centerPlacePose = Pose2d(72.0, -40.0, 0.deg)
-        var rightPlacePose = Pose2d(72.0, -42.0, 0.deg)
+        var leftPlacePose = Pose2d(72.5, -34.0, (5).deg)
+        var centerPlacePose = Pose2d(72.5, -35.0, 0.deg)
+        var rightPlacePose = Pose2d(72.0, -40.0, 0.deg)
         var regularExitPose = Pose2d(-16.0, -13.0, 0.deg)
         var centerExitPose = Pose2d(-26.0, -13.0, 0.deg)
         var crossPose = Pose2d(62.0, -17.0, 0.deg)
@@ -93,8 +95,8 @@ class RedFarYellowAuto2 : CommandOpMode() {
             PathBuilder(a)
                 .lineToSplineHeading(b).build()
         }
-
-//        val exitPath = PathBuilder(purpleBackUpTrajectory.end())
+        robot.drive.pathFollower
+        //        val exitPath = PathBuilder(purpleBackUpTrajectory.end())
 //            .run {
 //                if (location == PropPipeline.PropLocation.Center) {
 //                    lineToSplineHeading(centerExitPose)
@@ -111,6 +113,14 @@ class RedFarYellowAuto2 : CommandOpMode() {
         val yellowPlaceCommand = SequentialCommand(
             *exitPaths.map { robot.drive.followerPath(it) }.toTypedArray()
         )
+            .then(
+                Command.select(robot.drive) {
+                    robot.drive.followTrajectory(
+                        robot.drive.trajectoryBuilder()
+                            .forward(3.0).build()
+                    )
+                }
+            )
             .then(robot.outtake.extend())
             .wait(2.0)
             .then(robot.outtake::releaseRight)
@@ -122,6 +132,7 @@ class RedFarYellowAuto2 : CommandOpMode() {
             true,
             robot.outtake.ready(),
             purplePlopCommand,
+            WaitCommand(3.0),
             yellowPlaceCommand
         ).thenStopOpMode().schedule()
     }

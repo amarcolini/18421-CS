@@ -24,10 +24,10 @@ class BlueShortAuto : CommandOpMode() {
         var rightPlopPose = Pose2d(9.5, 34.0, (180).deg)
         var rightPlacePose = Pose2d(53.0, 35.0, 10.deg)
         var centerPlopPose = Pose2d(16.0, 34.5, (-90).deg)
-        var centerPlacePose = Pose2d(52.0, 41.0, 0.deg)
+        var centerPlacePose = Pose2d(52.0, 39.0, 0.deg)
         var leftPlopPose = Pose2d(26.0, 46.0, (-90).deg)
         var leftPlacePose = Pose2d(52.0, 48.0, 0.deg)
-        var parkPose = Pose2d(52.0, 60.0, 0.deg)
+        var parkPose = Pose2d(52.0, 64.0, 0.deg)
     }
 
     override fun preInit() {
@@ -75,9 +75,12 @@ class BlueShortAuto : CommandOpMode() {
             robot.drive.trajectoryBuilder(purplePlopTrajectory.end())
                 .back(3.0)
                 .lineToSplineHeading(placePose)
+                .wait(0.1)
+                .forward(3.0)
                 .build()
         val parkTrajectory =
             robot.drive.trajectoryBuilder(yellowPlaceTrajectory.end())
+                .back(3.0)
                 .lineToSplineHeading(parkPose)
                 .build()
 
@@ -90,7 +93,6 @@ class BlueShortAuto : CommandOpMode() {
             .then(robot.outtake::releaseRight)
             .wait(1.0)
             .then(robot.outtake.reset())
-            .wait(1.0)
             .then(robot.drive.followTrajectory(parkTrajectory))
 
         SequentialCommand(
