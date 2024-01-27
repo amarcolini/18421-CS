@@ -94,12 +94,13 @@ class PropPipeline(private val leftIsVisible: Boolean) : OpenCvPipeline() {
     )
 
     override fun processFrame(frame: Mat): Mat {
+        val tempMats = ArrayList<Mat>()
         Imgproc.cvtColor(frame, dst, Imgproc.COLOR_BGR2HSV)
         Core.inRange(dst, lowerBound, upperBound, tmp)
         Core.extractChannel(dst, dst, 1)
         Core.multiply(dst, tmp, dst)
-        val midMean = Core.sumElems(dst.submat(midRect)).`val`[0] / 1e5
-        val sideMean = Core.sumElems(dst.submat(sideRect)).`val`[0] / 1e5
+        val midMean = Core.sumElems(dst.submat(midRect).also { tempMats += it }).`val`[0] / 1e5
+        val sideMean = Core.sumElems(dst.submat(sideRect).also { tempMats += it }).`val`[0] / 1e5
         val location: PropLocation = when {
             midMean <= 15 && sideMean <= 15 -> if (leftIsVisible) PropLocation.Right else PropLocation.Left
             sideMean > midMean -> if (leftIsVisible) PropLocation.Left else PropLocation.Right
@@ -107,6 +108,7 @@ class PropPipeline(private val leftIsVisible: Boolean) : OpenCvPipeline() {
         }
         lastKnownLocation = location
         requestViewportDrawHook(DrawData(midMean, sideMean))
+        tempMats.forEach { it.release() }
         return if (showProcess) dst else frame
     }
 

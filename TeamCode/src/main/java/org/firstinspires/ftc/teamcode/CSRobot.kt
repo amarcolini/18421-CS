@@ -9,7 +9,6 @@ import com.amarcolini.joos.hardware.MotorGroup
 import com.amarcolini.joos.hardware.Servo
 import com.amarcolini.joos.util.NanoClock
 import com.qualcomm.hardware.lynx.LynxModule
-import org.firstinspires.ftc.teamcode.opmode.TransferTest
 import org.openftc.easyopencv.OpenCvCameraFactory
 import kotlin.math.roundToInt
 
@@ -63,6 +62,8 @@ class CSRobot : Robot() {
             .getIdentifier("cameraMonitorViewId", "id", hMap.appContext.packageName)
     )
 
+    val frontDistanceSensor = DistanceSensor(hMap("distance_front"))
+
     val pixelPlopper = PixelPlopper(Servo(hMap, "pixel_claw"))
 
     private val lynxModules = hMap.getAll<LynxModule>()
@@ -96,8 +97,11 @@ class CSRobot : Robot() {
             InstantCommand { intake.motorState = Intake.MotorState.STOPPED },
             WaitCommand(0.3),
             outtake.prepareTransfer(),
-            WaitCommand(1.5).onInit { intake.motorState = Intake.MotorState.REVERSE },
+            WaitCommand(1.0).onInit { intake.motorState = Intake.MotorState.TRANSFER },
             outtake.ready() and WaitCommand(0.3).then(intake.stop()),
-        ).requires(intake, outtake).setInterruptable(false)
+        ).requires(intake, outtake, verticalExtension).setInterruptable(false)
+            .onEnd {
+                intake.motorState = Intake.MotorState.STOPPED
+            }
     }
 }

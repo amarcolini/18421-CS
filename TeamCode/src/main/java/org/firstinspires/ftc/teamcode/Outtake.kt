@@ -3,8 +3,10 @@ package org.firstinspires.ftc.teamcode
 import com.amarcolini.joos.command.AbstractComponent
 import com.amarcolini.joos.command.Command
 import com.amarcolini.joos.command.InstantCommand
+import com.amarcolini.joos.dashboard.JoosConfig
 import com.amarcolini.joos.hardware.Servo
 
+@JoosConfig
 class Outtake(
     val armServo: Servo, val leftServo: Servo,
     val rightServo: Servo
@@ -13,11 +15,11 @@ class Outtake(
         private val initPosition = 0.7
         private val outtakePosition = 0.35
         private val armNeutral = 0.93
-        private val armTransfer = 0.94
-        private val rightPositions = arrayOf(0.37, 0.5, 0.7)
-        private val leftPositions = arrayOf(0.98, 0.85, 0.68)
-        var climbPosition = 0.6
-        var armSpeed = 0.5
+        var armTransfer = 0.94
+        private val rightPositions = arrayOf(0.35, 0.6)
+        private val leftPositions = arrayOf(0.97, 0.75)
+        private val climbPosition = 0.6
+        private val armSpeed = 0.5
     }
 
     var isLeftOpen = true
@@ -49,8 +51,8 @@ class Outtake(
     private fun close() {
         isLeftOpen = false
         isRightOpen = false
-        leftServo.position = leftPositions[2]
-        rightServo.position = rightPositions[2]
+        leftServo.position = leftPositions[0]
+        rightServo.position = rightPositions[0]
     }
 
     fun stopPixels() {

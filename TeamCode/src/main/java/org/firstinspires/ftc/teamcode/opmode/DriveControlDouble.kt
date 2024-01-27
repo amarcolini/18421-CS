@@ -13,8 +13,8 @@ import org.firstinspires.ftc.teamcode.Intake
 import kotlin.math.pow
 
 @JoosConfig
-@TeleOp(name = "DriveControl", group = "Official")
-class DriveControl : CommandOpMode() {
+@TeleOp(name = "DriveControlDouble", group = "Official")
+class DriveControlDouble : CommandOpMode() {
     private val robot by robot<CSRobot>()
     override fun preInit() {
         robot.pixelPlopper.prime()
@@ -49,8 +49,8 @@ class DriveControl : CommandOpMode() {
                 }
             )
 
-            val leftTrigger = gamepad.p1.left_trigger.value
-            val rightTrigger = gamepad.p1.right_trigger.value
+            val leftTrigger = gamepad.p2.left_trigger.value
+            val rightTrigger = gamepad.p2.right_trigger.value
             var power = (rightTrigger - leftTrigger).pow(3).toDouble() * 1.0 + 0.1
             canTransfer = !robot.verticalExtension.bottomSensor.state
             if (canTransfer && power < 0) power = 0.0
@@ -75,21 +75,21 @@ class DriveControl : CommandOpMode() {
             telem.addLine("<font color=\"${leftColor}\">████</font>    <font color=\"${rightColor}\">████</font>")
         }
 
-        map(gamepad.p1.y0::isJustActivated, Command.select(robot.outtake) {
+        map(gamepad.p2.y0::isJustActivated, Command.select(robot.outtake) {
             if (robot.outtake.isExtended) robot.outtake.resetArm()
             else robot.outtake.extend()
         })
 
-        map(gamepad.p1.left_bumper::isJustActivated, Command.of {
+        map(gamepad.p2.left_bumper::isJustActivated, Command.of {
             leftPixelColor = null
             robot.outtake.releaseLeft()
         }.requires(robot.intake))
-        map(gamepad.p1.right_bumper::isJustActivated, Command.of {
+        map(gamepad.p2.right_bumper::isJustActivated, Command.of {
             rightPixelColor = null
             robot.outtake.releaseRight()
         }.requires(robot.outtake))
 
-        map(gamepad.p1.b0::isJustActivated, Command.select {
+        map(gamepad.p2.b0::isJustActivated, Command.select {
             if (!canTransfer) return@select Command.emptyCommand()
             val (left, right) = robot.intake.getPixelColors()
             if (hasIntaked) {
@@ -100,13 +100,13 @@ class DriveControl : CommandOpMode() {
             robot.transfer()
         }.requires(robot.intake, robot.outtake, robot.verticalExtension).setInterruptable(false))
 
-        map(gamepad.p1.a0::isJustActivated, Command.select(robot.intake) {
+        map(gamepad.p2.a0::isJustActivated, Command.select(robot.intake) {
             when (robot.intake.motorState) {
                 Intake.MotorState.ACTIVE -> robot.intake.stop()
                 else -> robot.intake.intake()
             }
         }.onEnd { hasIntaked = true })
-        map(gamepad.p1.x0::isJustActivated, Command.select(robot.intake) {
+        map(gamepad.p2.x0::isJustActivated, Command.select(robot.intake) {
             when (robot.intake.servoState) {
                 Intake.ServoState.DOWN -> robot.intake.waitForServoState(Intake.ServoState.UP)
                 Intake.ServoState.UP -> robot.intake.waitForServoState(Intake.ServoState.DOWN)
@@ -114,7 +114,7 @@ class DriveControl : CommandOpMode() {
                 robot.intake.motorState = Intake.MotorState.STOPPED
             }
         })
-        map(gamepad.p1.dpad_left::isJustActivated, robot.intake.reverse().onInit {
+        map(gamepad.p2.dpad_left::isJustActivated, robot.intake.reverse().onInit {
             leftPixelColor = null
             rightPixelColor = null
         })
@@ -126,6 +126,6 @@ class DriveControl : CommandOpMode() {
 //            if (robot.pixelPlopper.isPrimed) robot.pixelPlopper.open()
 //            else robot.pixelPlopper.prime()
 //        }
-        map(gamepad.p1.dpad_right::isJustActivated, robot.outtake.prepareClimb())
+        map(gamepad.p2.dpad_right::isJustActivated, robot.outtake.prepareClimb())
     }
 }

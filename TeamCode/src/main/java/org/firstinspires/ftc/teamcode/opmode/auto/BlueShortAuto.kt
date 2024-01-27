@@ -5,6 +5,8 @@ import com.amarcolini.joos.command.CommandOpMode
 import com.amarcolini.joos.command.SequentialCommand
 import com.amarcolini.joos.dashboard.JoosConfig
 import com.amarcolini.joos.geometry.Pose2d
+import com.amarcolini.joos.path.heading.LinearHeading
+import com.amarcolini.joos.path.heading.SplineHeading
 import com.amarcolini.joos.util.deg
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous
 import org.firstinspires.ftc.teamcode.CSRobot
@@ -81,6 +83,7 @@ class BlueShortAuto : CommandOpMode() {
         val parkTrajectory =
             robot.drive.trajectoryBuilder(yellowPlaceTrajectory.end())
                 .back(3.0)
+                .addLine(placePose.vec(), SplineHeading(parkPose.heading))
                 .lineToSplineHeading(parkPose)
                 .build()
 

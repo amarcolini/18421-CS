@@ -2,7 +2,6 @@ package org.firstinspires.ftc.teamcode
 
 import com.amarcolini.joos.command.AbstractComponent
 import com.amarcolini.joos.command.Command
-import com.amarcolini.joos.command.Component
 import com.amarcolini.joos.command.FunctionalCommand
 import com.amarcolini.joos.command.WaitCommand
 import com.amarcolini.joos.control.DCMotorFeedforward
@@ -12,7 +11,6 @@ import com.amarcolini.joos.dashboard.JoosConfig
 import com.amarcolini.joos.hardware.Motor
 import com.amarcolini.joos.hardware.MotorGroup
 import com.qualcomm.robotcore.hardware.DigitalChannel
-import org.firstinspires.ftc.robotcore.external.Func
 
 @JoosConfig
 class VerticalExtension(

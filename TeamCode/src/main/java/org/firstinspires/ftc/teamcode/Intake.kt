@@ -24,9 +24,10 @@ class Intake(
     }
 
     enum class MotorState(val power: Double) {
-        ACTIVE(0.5),
+        ACTIVE(1.0),
         REVERSE(-0.3),
         STOPPED(0.0),
+        TRANSFER(-0.5),
     }
 
     enum class ServoState(val position: Double) {
