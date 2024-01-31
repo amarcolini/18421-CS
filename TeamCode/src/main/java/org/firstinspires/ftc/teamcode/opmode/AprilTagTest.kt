@@ -1,14 +1,9 @@
 package org.firstinspires.ftc.teamcode.opmode
 
-import android.R.attr.tag
 import com.acmerobotics.dashboard.FtcDashboard
 import com.amarcolini.joos.command.CommandOpMode
-import com.amarcolini.joos.geometry.Pose2d
 import com.amarcolini.joos.geometry.Vector2d
-import com.amarcolini.joos.util.rad
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp
-import org.firstinspires.ftc.robotcore.external.matrices.VectorF
-import org.firstinspires.ftc.robotcore.external.navigation.Quaternion
 import org.firstinspires.ftc.robotcore.internal.camera.calibration.CameraCalibrationHelper
 import org.firstinspires.ftc.teamcode.CSRobot
 import org.firstinspires.ftc.teamcode.vision.AprilTagPipeline
@@ -44,15 +39,23 @@ class AprilTagTest : CommandOpMode() {
         })
         schedule(true) {
             val detections = pipeline.processor.detections
-            detections.forEachIndexed { i, it ->
+            detections.forEachIndexed { _, it ->
                 val pose = pipeline.getPose(it)
-                telem.drawRobot(pose, "blue")
-                telem.addData("pose $i", pose)
-                telem.addData(
-                    "center $i", Vector2d(
-                        it.center.x, it.center.y
-                    )
-                )
+                if (pose != null) {
+                    val i = it.id
+                    telem.addLine("p")
+                    telem.drawRobot(pose.toPose2d(), "blue")
+                    telem.addLine("pose $i: ${pose.translation.data.toList()}")
+                    telem.addLine("heading $i: ${pose.zRotation}")
+                    telem.addLine("quat $i: ${pose.rotation}")
+//                    telem.addLine(
+//                        "center $i: ${
+//                            Vector2d(
+//                                it.center.x, it.center.y
+//                            )
+//                        }"
+//                    )
+                }
             }
         }
 

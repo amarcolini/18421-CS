@@ -1,13 +1,15 @@
 package org.firstinspires.ftc.teamcode.opmode.auto
 
 import com.acmerobotics.dashboard.FtcDashboard
+import com.amarcolini.joos.command.Command
 import com.amarcolini.joos.command.CommandOpMode
 import com.amarcolini.joos.command.SequentialCommand
+import com.amarcolini.joos.command.WaitCommand
 import com.amarcolini.joos.dashboard.JoosConfig
 import com.amarcolini.joos.geometry.Pose2d
+import com.amarcolini.joos.path.PathBuilder
 import com.amarcolini.joos.util.deg
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous
-import com.qualcomm.robotcore.eventloop.opmode.Disabled
 import org.firstinspires.ftc.teamcode.CSRobot
 import org.firstinspires.ftc.teamcode.tile
 import org.firstinspires.ftc.teamcode.vision.PropPipeline
@@ -15,7 +17,6 @@ import org.openftc.easyopencv.OpenCvCamera
 import org.openftc.easyopencv.OpenCvCameraRotation
 
 @Autonomous
-@Disabled
 @JoosConfig
 class BlueFarYellowAuto : CommandOpMode() {
     private val robot by robot<CSRobot>()
@@ -23,15 +24,15 @@ class BlueFarYellowAuto : CommandOpMode() {
 
     companion object {
         var startPose = Pose2d(-16.0, 3 * tile - 9.0, (-90).deg)
-        var rightPlopPose = Pose2d(-20.0, 36.0, (-180).deg)
-        var centerPlopPose = Pose2d(-16.0, 45.0, (-90).deg)
-        var leftPlopPose = Pose2d(-10.0, 36.0, (0).deg)
-        var rightPlacePose = Pose2d(53.0, 32.0, 5.deg)
-        var centerPlacePose = Pose2d(52.0, 41.0, 0.deg)
-        var leftPlacePose = Pose2d(52.0, 48.0, 0.deg)
+        var rightPlopPose = Pose2d(-15.5, 32.0, (-180).deg)
+        var centerPlopPose = Pose2d(-25.0, 28.0, (0).deg)
+        var leftPlopPose = Pose2d(-10.0, 35.0, (0).deg)
+        var rightPlacePose = Pose2d(71.5, 34.0, 5.deg)
+        var centerPlacePose = Pose2d(71.5, 37.0, 0.deg)
+        var leftPlacePose = Pose2d(71.5, 43.0, 0.deg)
         var regularExitPose = Pose2d(-16.0, 13.0, 0.deg)
         var centerExitPose = Pose2d(-26.0, 13.0, 0.deg)
-        var crossPose = Pose2d(48.0, 13.0, 0.deg)
+        var crossPose = Pose2d(62.0, 17.0, 0.deg)
     }
 
     override fun preInit() {
@@ -72,47 +73,66 @@ class BlueFarYellowAuto : CommandOpMode() {
             PropPipeline.PropLocation.Right -> rightPlopPose to rightPlacePose
         }
 
-        val purplePlopTrajectory =
-            robot.drive.trajectoryBuilder(startPose)
-                .lineToSplineHeading(plopPose)
-                .build()
-        val purpleBackUpTrajectory =
-            robot.drive.trajectoryBuilder(purplePlopTrajectory.end())
-                .back(3.0)
-                .build()
+        val purplePlopPath = PathBuilder(startPose)
+            .lineToSplineHeading(plopPose)
+            .build()
+        val purpleBackUpTrajectory = PathBuilder(purplePlopPath.end())
+            .back(3.0)
+            .build()
 
 //        val yellowPlaceTrajectory =
 //            robot.drive.trajectoryBuilder(purplePlopTrajectory.end())
 //                .back(3.0)
 //                .lineToSplineHeading(placePose)
 //                .build()
+        val exitPaths = listOf(
+            purpleBackUpTrajectory.end(),
+            if (location == PropPipeline.PropLocation.Center) {
+                centerExitPose
+            } else regularExitPose,
+            crossPose, placePose
+        ).zipWithNext { a, b ->
+            PathBuilder(a)
+                .lineToSplineHeading(b).build()
+        }
 
-        val exitTrajectory = robot.drive.trajectoryBuilder(purpleBackUpTrajectory.end())
-            .run {
-                if (location == PropPipeline.PropLocation.Center) {
-                    lineToSplineHeading(centerExitPose)
-                } else lineToSplineHeading(regularExitPose)
-                lineToSplineHeading(crossPose)
-                lineToSplineHeading(placePose)
-                build()
-            }
+//        val exitPath = PathBuilder(purpleBackUpTrajectory.end())
+//            .run {
+//                if (location == PropPipeline.PropLocation.Center) {
+//                    lineToSplineHeading(centerExitPose)
+//                } else lineToSplineHeading(regularExitPose)
+//                lineToSplineHeading(crossPose)
+//                lineToSplineHeading(placePose)
+//                build()
+//            }
 
-        val purplePlopCommand = robot.drive.followTrajectory(purplePlopTrajectory)
+        val purplePlopCommand = robot.drive.followerPath(purplePlopPath)
             .then(robot.pixelPlopper.plop())
-            .then(robot.drive.followTrajectory(purpleBackUpTrajectory))
+            .then(robot.drive.followerPath(purpleBackUpTrajectory))
 
-        val yellowPlaceCommand = robot.drive.followTrajectory(exitTrajectory)
-            .then(robot.outtake::extend)
+        val yellowPlaceCommand = SequentialCommand(
+            *exitPaths.map { robot.drive.followerPath(it) }.toTypedArray()
+        )
+            .then(
+                Command.select(robot.drive) {
+                    robot.drive.followTrajectory(
+                        robot.drive.trajectoryBuilder()
+                            .forward(3.0).build()
+                    )
+                }
+            )
+            .then(robot.outtake.extend())
             .wait(2.0)
-            .then(robot.outtake::releaseRight)
+            .then(robot.outtake::releaseLeft)
             .wait(2.0)
-            .then(robot.outtake::reset)
+            .then(robot.outtake.reset())
             .wait(2.0)
 
         SequentialCommand(
             true,
             robot.outtake.ready(),
             purplePlopCommand,
+            WaitCommand(3.0),
             yellowPlaceCommand
         ).thenStopOpMode().schedule()
     }

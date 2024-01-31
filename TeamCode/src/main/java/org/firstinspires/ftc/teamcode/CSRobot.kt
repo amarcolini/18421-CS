@@ -85,6 +85,7 @@ class CSRobot : Robot() {
             }
             val now = clock.seconds()
             telem.addData("Loop hZ", (1.0 / (now - lastTimestamp)).roundToInt())
+            telem.addData("numPixels", intake.numPixels)
             lastTimestamp = now
         })
     }

@@ -1,7 +1,7 @@
-package org.firstinspires.ftc.teamcode.vision
+package org.firstinspires.ftc.teamcode
 
+import com.amarcolini.joos.geometry.Angle
 import com.amarcolini.joos.geometry.Pose2d
-import com.amarcolini.joos.util.deg
 import com.amarcolini.joos.util.rad
 import org.firstinspires.ftc.robotcore.external.matrices.MatrixF
 import org.firstinspires.ftc.robotcore.external.matrices.VectorF
@@ -37,34 +37,36 @@ class Transform3d {
 
     fun unaryMinusInverse(): Transform3d {
         val Q = rotation.inverse()
-        val t = rotation.applyToVector(zeroVector.subtracted(translation))
+        val t = Q.applyToVector(translation)
+        t.multiply(-1f)
         return Transform3d(t, Q)
     }
 
     fun plus(P: Transform3d): Transform3d {
-        val t = translation.added(rotation.applyToVector(P.translation))
-        val Q = rotation.multiply(P.rotation, System.nanoTime())
+        val t = P.translation.added(P.rotation.applyToVector(translation))
+        val Q = P.rotation.multiply(rotation, System.nanoTime())
         return Transform3d(t, Q)
     }
 
-    val z: Double
-        get() = atan2(
-            2.0 * (rotation.y * rotation.z + rotation.w * rotation.x),
-            (rotation.w * rotation.w - rotation.x * rotation.x - rotation.y * rotation.y + rotation.z * rotation.z).toDouble()
-        )
+    val zRotation: Angle
+        //        get() = atan2(
+//            2.0 * (rotation.y * rotation.z + rotation.w * rotation.x),
+//            (rotation.w * rotation.w - rotation.x * rotation.x - rotation.y * rotation.y + rotation.z * rotation.z).toDouble()
+//        )
+        get() {
+            val a1 = atan2(rotation.x + rotation.z, rotation.w - rotation.y)
+            val a2 = atan2(rotation.z - rotation.x, rotation.w + rotation.y)
+            return (a1 + a2).rad
+        }
 
     fun toPose2d(): Pose2d {
         return Pose2d(
-            translation[0].toDouble(),
-            translation[1].toDouble(),
-            this.z.rad
+            translation[0].toDouble(), translation[1].toDouble(), this.zRotation
         )
     }
 
     companion object {
-        private val zeroVector = VectorF(0f, 0f, 0f)
-
-        fun MatrixToQuaternion(m1: MatrixF): Quaternion {
+        fun matrixToQuaternion(m1: MatrixF): Quaternion {
             val w = (sqrt(1.0 + m1[0, 0] + m1[1, 1] + m1[2, 2]) / 2.0).toFloat()
             val w4 = (4.0 * w).toFloat()
             val x = (m1[2, 1] - m1[1, 2]) / w4

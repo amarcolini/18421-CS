@@ -120,10 +120,12 @@ class Intake(
         super.update()
         val now = NanoClock.system.seconds()
         val last = lastUpdateTimestamp
-        if ((last == null || now - last > 0.1) && (motorState == MotorState.ACTIVE && servoState == ServoState.DOWN)) {
-            numPixels = (if (leftSensor.getDistance(DistanceUnit.MM) < 8.0) 1 else 0) +
-                    (if (rightSensor.getDistance(DistanceUnit.MM) < 8.0) 1 else 0)
-            lastUpdateTimestamp = now
-        }
+        if (motorState == MotorState.ACTIVE && servoState == ServoState.DOWN) {
+            if ((last == null || now - last > 0.1)) {
+                numPixels = (if (leftSensor.getDistance(DistanceUnit.MM) < 8.0) 1 else 0) +
+                        (if (rightSensor.getDistance(DistanceUnit.MM) < 8.0) 1 else 0)
+                lastUpdateTimestamp = now
+            }
+        } else numPixels = 0
     }
 }

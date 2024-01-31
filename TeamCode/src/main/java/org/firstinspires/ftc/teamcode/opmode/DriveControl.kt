@@ -88,6 +88,17 @@ class DriveControl : CommandOpMode() {
             rightPixelColor = null
             robot.outtake.releaseRight()
         }.requires(robot.outtake))
+        map(
+            { robot.intake.numPixels == 2 && hasIntaked }, robot.intake.waitForServoState(Intake.ServoState.UP)
+                .then(robot.intake.stop()).onEnd {
+                    val (left, right) = robot.intake.getPixelColors()
+                    if (hasIntaked) {
+                        leftPixelColor = left
+                        rightPixelColor = right
+                        hasIntaked = false
+                    }
+                }
+        )
 
         map(gamepad.p1.b0::isJustActivated, Command.select {
             if (!canTransfer) return@select Command.emptyCommand()

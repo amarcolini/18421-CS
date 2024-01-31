@@ -99,6 +99,17 @@ class DriveControlDouble : CommandOpMode() {
             }
             robot.transfer()
         }.requires(robot.intake, robot.outtake, robot.verticalExtension).setInterruptable(false))
+        map(
+            { robot.intake.numPixels == 2 && hasIntaked }, robot.intake.waitForServoState(Intake.ServoState.UP)
+                .then(robot.intake.stop()).onEnd {
+                    val (left, right) = robot.intake.getPixelColors()
+                    if (hasIntaked) {
+                        leftPixelColor = left
+                        rightPixelColor = right
+                        hasIntaked = false
+                    }
+                }
+        )
 
         map(gamepad.p2.a0::isJustActivated, Command.select(robot.intake) {
             when (robot.intake.motorState) {
