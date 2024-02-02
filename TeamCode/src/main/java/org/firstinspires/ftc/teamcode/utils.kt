@@ -34,47 +34,37 @@ class PathCommandBuilder(
         return this
     }
 
-    private fun pushPath(newTangent: Angle? = null): Path? {
+    private fun pushPath(newTangent: (Angle) -> Angle = { it }): Path? {
         val path = builder.build().let {
             if (it.segments.isNotEmpty()) it else null
         }
+        val newPose = path?.end() ?: currentPose
         builder = PathBuilder(
-            path?.end() ?: currentPose,
-            newTangent?.let { Pose2d(it.vec()) } ?: path?.endDeriv() ?: Pose2d(currentPose.headingVec()),
+            newPose,
+            Pose2d(newTangent(newPose.heading).vec()),
             path?.endSecondDeriv() ?: Pose2d()
         )
         currentPose = path?.end() ?: currentPose
         return path
     }
 
-    private fun pushPathCommand(newTangent: Angle? = null) = pushPath(newTangent)?.let {
+    private fun pushPathCommand(newTangent: (Angle) -> Angle = { it }) = pushPath(newTangent)?.let {
         drive.followerPath(it)
     }
 
-    private fun pushAndAddPath(newTangent: Angle? = null) {
+    private fun pushAndAddPath(newTangent: (Angle) -> Angle = { it }) {
         pushPathCommand(newTangent)?.let {
             currentCommand = currentCommand then it
         }
     }
 
-    fun setTangent(angle: Angle? = null): PathCommandBuilder {
+    fun setTangent(angle: (Angle) -> Angle): PathCommandBuilder {
         pushAndAddPath(angle)
         return this
     }
 
     fun reverseTangent(): PathCommandBuilder {
-        val path = builder.build().let {
-            if (it.segments.isNotEmpty()) it else null
-        }
-        builder = PathBuilder(
-            path?.end() ?: currentPose,
-            (path?.endDeriv() ?: Pose2d(currentPose.headingVec())) * -1.0,
-            path?.endSecondDeriv() ?: Pose2d()
-        )
-        currentPose = path?.end() ?: currentPose
-        if (path != null) {
-            currentCommand = currentCommand then drive.followerPath(path)
-        }
+        pushAndAddPath { -it }
         return this
     }
 

@@ -101,7 +101,6 @@ class BlueCycleAuto2 : CommandOpMode() {
             .splineTo(crossPose.vec(), crossPose.heading)
             .splineTo(placePose.vec(), placePose.heading)
             .and(WaitCommand(0.5).then(robot.transfer()))
-//            .forward(3.0).withTimeout(1.0)
             .build()
 
         val yellowPlaceCommand = robot.drive.pathBuilder(placePose)

@@ -9,6 +9,7 @@ import com.amarcolini.joos.path.heading.LinearHeading
 import com.amarcolini.joos.path.heading.SplineHeading
 import com.amarcolini.joos.util.deg
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous
+import com.qualcomm.robotcore.eventloop.opmode.Disabled
 import org.firstinspires.ftc.teamcode.CSRobot
 import org.firstinspires.ftc.teamcode.tile
 import org.firstinspires.ftc.teamcode.vision.PropPipeline
@@ -17,6 +18,7 @@ import org.openftc.easyopencv.OpenCvCameraRotation
 
 @Autonomous
 @JoosConfig
+@Disabled
 class BlueShortAuto : CommandOpMode() {
     private val robot by robot<CSRobot>()
     private val pipeline = PropPipeline(true)

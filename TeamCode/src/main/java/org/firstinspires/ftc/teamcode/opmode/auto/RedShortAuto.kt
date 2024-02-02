@@ -7,6 +7,7 @@ import com.amarcolini.joos.dashboard.JoosConfig
 import com.amarcolini.joos.geometry.Pose2d
 import com.amarcolini.joos.util.deg
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous
+import com.qualcomm.robotcore.eventloop.opmode.Disabled
 import org.firstinspires.ftc.teamcode.CSRobot
 import org.firstinspires.ftc.teamcode.tile
 import org.firstinspires.ftc.teamcode.vision.PropPipeline
@@ -15,6 +16,7 @@ import org.openftc.easyopencv.OpenCvCameraRotation
 
 @Autonomous
 @JoosConfig
+@Disabled
 class RedShortAuto : CommandOpMode() {
     private val robot by robot<CSRobot>()
     private val pipeline = PropPipeline(false)
