@@ -119,8 +119,8 @@ class DriveControl : CommandOpMode() {
         }.onEnd { hasIntaked = true })
         map(gamepad.p1.x0::isJustActivated, Command.select(robot.intake) {
             when (robot.intake.servoState) {
-                Intake.ServoState.DOWN -> robot.intake.waitForServoState(Intake.ServoState.UP)
                 Intake.ServoState.UP -> robot.intake.waitForServoState(Intake.ServoState.DOWN)
+                else -> robot.intake.waitForServoState(Intake.ServoState.UP)
             }.onInit {
                 robot.intake.motorState = Intake.MotorState.STOPPED
             }

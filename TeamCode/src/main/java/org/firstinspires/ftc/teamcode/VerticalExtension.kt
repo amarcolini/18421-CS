@@ -59,6 +59,16 @@ class VerticalExtension(
         requirements = setOf(this)
     )
 
+    fun goToPosition(position: Double): Command = Command.of {
+        positionControlEnabled = true
+        setTargetPosition(position)
+    }.waitUntil {
+        positionController.isAtSetPoint()
+    }.onEnd {
+        positionControlEnabled = false
+        motors.setPower(0.0)
+    }.requires(this)
+
     override fun update() {
         super.update()
         if (positionControlEnabled) {

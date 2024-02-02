@@ -98,6 +98,11 @@ class Drivetrain(
         }
     }
 
+    fun pathBuilder(
+        startPose: Pose2d = poseEstimate,
+        startTangent: Angle = startPose.heading
+    ) = PathCommandBuilder(this, startPose, startTangent)
+
     /**
      * Returns a [TrajectoryBuilder] with the constraints of this drive.
      */

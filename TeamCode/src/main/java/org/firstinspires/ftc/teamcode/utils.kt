@@ -1,12 +1,14 @@
 package org.firstinspires.ftc.teamcode
 
 import com.amarcolini.joos.command.Command
+import com.amarcolini.joos.command.Component
 import com.amarcolini.joos.command.SequentialCommand
 import com.amarcolini.joos.command.WaitCommand
 import com.amarcolini.joos.geometry.Angle
 import com.amarcolini.joos.geometry.Pose2d
 import com.amarcolini.joos.geometry.Vector2d
 import com.amarcolini.joos.hardware.drive.DrivePathFollower
+import com.amarcolini.joos.path.Path
 import com.amarcolini.joos.path.PathBuilder
 import com.amarcolini.joos.path.PathContinuityViolationException
 import com.amarcolini.joos.path.heading.*
@@ -15,38 +17,65 @@ const val tile = 24.0
 
 class PathCommandBuilder(
     private val drive: DrivePathFollower,
-    startPose: Pose2d,
+    private val startPose: Pose2d,
     startTangent: Angle = startPose.heading,
 ) {
     private var builder = PathBuilder(startPose, startTangent)
-
-    private var currentCommand = SequentialCommand()
+    private var currentCommand: Command = SequentialCommand()
+    private var currentPose = startPose
 
     private fun tryAdd(segment: PathBuilder.() -> Unit): PathCommandBuilder {
         try {
             builder.segment()
         } catch (e: PathContinuityViolationException) {
-            pushPath()
+            pushAndAddPath()
             builder.segment()
         }
         return this
     }
 
-    private fun pushPath(newTangent: Angle? = null): Command? {
-        val path = builder.build()
+    private fun pushPath(newTangent: Angle? = null): Path? {
+        val path = builder.build().let {
+            if (it.segments.isNotEmpty()) it else null
+        }
         builder = PathBuilder(
-            path.end(),
-            newTangent?.let { Pose2d(it.vec()) } ?: path.endDeriv(),
-            path.endSecondDeriv()
+            path?.end() ?: currentPose,
+            newTangent?.let { Pose2d(it.vec()) } ?: path?.endDeriv() ?: Pose2d(currentPose.headingVec()),
+            path?.endSecondDeriv() ?: Pose2d()
         )
-        return if (path.segments.isNotEmpty()) drive.followerPath(path)
-        else null
+        currentPose = path?.end() ?: currentPose
+        return path
+    }
+
+    private fun pushPathCommand(newTangent: Angle? = null) = pushPath(newTangent)?.let {
+        drive.followerPath(it)
     }
 
     private fun pushAndAddPath(newTangent: Angle? = null) {
-        pushPath(newTangent)?.let {
+        pushPathCommand(newTangent)?.let {
             currentCommand = currentCommand then it
         }
+    }
+
+    fun setTangent(angle: Angle? = null): PathCommandBuilder {
+        pushAndAddPath(angle)
+        return this
+    }
+
+    fun reverseTangent(): PathCommandBuilder {
+        val path = builder.build().let {
+            if (it.segments.isNotEmpty()) it else null
+        }
+        builder = PathBuilder(
+            path?.end() ?: currentPose,
+            (path?.endDeriv() ?: Pose2d(currentPose.headingVec())) * -1.0,
+            path?.endSecondDeriv() ?: Pose2d()
+        )
+        currentPose = path?.end() ?: currentPose
+        if (path != null) {
+            currentCommand = currentCommand then drive.followerPath(path)
+        }
+        return this
     }
 
     fun then(command: Command): PathCommandBuilder {
@@ -55,18 +84,30 @@ class PathCommandBuilder(
         return this
     }
 
-    fun and(command: Command): PathCommandBuilder {
-        val original = pushPath()
-        currentCommand = currentCommand then (
-                if (original != null) (original and command)
-                else command
-                )
+    fun then(runnable: Runnable) = then(Command.of(runnable))
+
+    fun combine(command: Command, with: Command.(Command) -> Command): PathCommandBuilder {
+        val original = pushPathCommand()
+        currentCommand = currentCommand then (original?.with(command) ?: command)
         return this
+    }
+
+    fun and(command: Command): PathCommandBuilder = combine(command) {
+        this and it
     }
 
     fun wait(duration: Double) = then(WaitCommand(duration))
 
-    fun build() = currentCommand
+    fun race(command: Command): PathCommandBuilder = combine(command) {
+        this race it
+    }
+
+    fun withTimeout(duration: Double) = race(WaitCommand(duration))
+
+    fun build(): Command {
+        pushAndAddPath()
+        return PathCommand(currentCommand, startPose, currentPose)
+    }
 
     /**
      * Adds a line segment with the specified heading interpolation.
@@ -119,4 +160,28 @@ class PathCommandBuilder(
 
     fun splineToSplineHeading(endPose: Pose2d, endTangent: Angle) =
         addSpline(endPose.vec(), endTangent, SplineHeading(endPose.heading))
+}
+
+data class PathCommand(val command: Command, val startPose: Pose2d, val endPose: Pose2d) : Command() {
+    override val isInterruptable: Boolean
+        get() = command.isInterruptable
+
+    override val requirements: Set<Component>
+        get() = command.requirements
+
+    override fun execute() {
+        command.execute()
+    }
+
+    override fun init() {
+        command.init()
+    }
+
+    override fun isFinished(): Boolean {
+        return command.isFinished()
+    }
+
+    override fun end(interrupted: Boolean) {
+        command.end(interrupted)
+    }
 }

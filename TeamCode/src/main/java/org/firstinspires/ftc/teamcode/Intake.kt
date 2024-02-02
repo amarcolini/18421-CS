@@ -31,7 +31,7 @@ class Intake(
     }
 
     enum class ServoState(val position: Double) {
-        DOWN(0.65), UP(0.09)
+        DOWN(0.65), UP(0.09), STACK(0.5)
     }
 
     var motorState = MotorState.STOPPED
@@ -42,7 +42,7 @@ class Intake(
 
     var servoState = ServoState.UP
         set(value) {
-            servo.position = value.position
+            if (value != ServoState.STACK) servo.position = value.position
             field = value
         }
 
@@ -90,6 +90,8 @@ class Intake(
             .requires(this)
     }
 
+    fun waitForServoPosition(position: Double) = waitForPosition(position, 170.deg / servo.range)
+
     var currentTarget = 0.0
     private fun waitForPosition(position: Double, speed: Double): Command = Command.select {
         val correctedPos = position.coerceIn(0.0, 1.0)
@@ -120,7 +122,7 @@ class Intake(
         super.update()
         val now = NanoClock.system.seconds()
         val last = lastUpdateTimestamp
-        if (motorState == MotorState.ACTIVE && servoState == ServoState.DOWN) {
+        if (motorState == MotorState.ACTIVE && (servoState == ServoState.DOWN || servoState == ServoState.STACK)) {
             if ((last == null || now - last > 0.1)) {
                 numPixels = (if (leftSensor.getDistance(DistanceUnit.MM) < 8.0) 1 else 0) +
                         (if (rightSensor.getDistance(DistanceUnit.MM) < 8.0) 1 else 0)

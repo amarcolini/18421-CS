@@ -42,7 +42,7 @@ class DriveControlDouble : CommandOpMode() {
                 if (!isSlow) drivePose
                 else drivePose.run {
                     Pose2d(
-                        x * 0.2,
+                        x * 0.4,
                         y * 0.5,
                         heading * 0.3
                     )
@@ -119,8 +119,8 @@ class DriveControlDouble : CommandOpMode() {
         }.onEnd { hasIntaked = true })
         map(gamepad.p2.x0::isJustActivated, Command.select(robot.intake) {
             when (robot.intake.servoState) {
-                Intake.ServoState.DOWN -> robot.intake.waitForServoState(Intake.ServoState.UP)
                 Intake.ServoState.UP -> robot.intake.waitForServoState(Intake.ServoState.DOWN)
+                else -> robot.intake.waitForServoState(Intake.ServoState.UP)
             }.onInit {
                 robot.intake.motorState = Intake.MotorState.STOPPED
             }
