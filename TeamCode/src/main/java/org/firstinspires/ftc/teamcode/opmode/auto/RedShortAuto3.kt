@@ -16,19 +16,19 @@ import org.openftc.easyopencv.OpenCvCameraRotation
 
 @Autonomous
 @JoosConfig
-class BlueShortAuto3 : CommandOpMode() {
+class RedShortAuto3 : CommandOpMode() {
     private val robot by robot<CSRobot>()
-    private val pipeline = PropPipeline(true)
+    private val pipeline = PropPipeline(false)
 
     companion object {
-        var startPose = Pose2d(16.0, 3 * tile - 9.0, (-90).deg)
-        var rightPlopPose = Pose2d(10.0, 35.0, (180).deg)
-        var rightPlacePose = Pose2d(50.0, 33.0, 0.deg)
-        var centerPlopPose = Pose2d(16.0, 37.0, (-90).deg)
-        var centerPlacePose = Pose2d(50.0, 39.0, 0.deg)
-        var leftPlopPose = Pose2d(26.0, 46.0, (-90).deg)
-        var leftPlacePose = Pose2d(50.0, 48.0, 0.deg)
-        var parkPose = Pose2d(52.0, 64.0, 0.deg)
+        var startPose = Pose2d(16.0, -3 * tile + 9.0, (90).deg)
+        var leftPlopPose = Pose2d(10.0, -35.0, (-180).deg)
+        var leftPlacePose = Pose2d(50.0, -30.0, 0.deg)
+        var centerPlopPose = Pose2d(16.0, -37.0, (90).deg)
+        var centerPlacePose = Pose2d(50.0, -36.0, 0.deg)
+        var rightPlopPose = Pose2d(24.0, -46.0, (90).deg)
+        var rightPlacePose = Pose2d(50.0, -45.0, 0.deg)
+        var parkPose = Pose2d(52.0, -64.0, 0.deg)
     }
 
     override fun preInit() {

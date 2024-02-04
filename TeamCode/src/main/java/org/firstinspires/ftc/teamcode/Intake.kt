@@ -27,7 +27,7 @@ class Intake(
         ACTIVE(1.0),
         REVERSE(-0.3),
         STOPPED(0.0),
-        TRANSFER(-0.5),
+        TRANSFER(-0.7),
     }
 
     enum class ServoState(val position: Double) {

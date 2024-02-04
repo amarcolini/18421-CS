@@ -63,6 +63,8 @@ class PathCommandBuilder(
         return this
     }
 
+    fun setTangent(angle: Angle) = setTangent { angle }
+
     fun reverseTangent(): PathCommandBuilder {
         pushAndAddPath { -it }
         return this

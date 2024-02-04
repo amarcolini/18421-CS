@@ -18,24 +18,27 @@ import org.openftc.easyopencv.OpenCvCameraRotation
 
 @Autonomous
 @JoosConfig
-class RedCycleAuto : CommandOpMode() {
+class RedSussyWussyAutonomussy : CommandOpMode() {
     private val robot by robot<CSRobot>()
-    private val pipeline = PropPipeline(true)
+    private val pipeline = PropPipeline(false)
 
     companion object {
-        var startPose = Pose2d(-2 * tile + 8.0, -3 * tile + 9.0, (90).deg)
-        var leftPlopPose = Pose2d(-39.5, -32.0, (180).deg)
-        var centerPlopPose = Pose2d(-49.0, -25.0, (0).deg)
-        var rightPlopPose = Pose2d(-34.0, -35.0, (0).deg)
-        var leftPlacePose = Pose2d(47.5, -29.5, (0).deg)
-        var centerPlacePose = Pose2d(47.5, -31.0, 0.deg)
-        var rightPlacePose = Pose2d(47.5, -40.0, 0.deg)
-        var regularExitPose = Pose2d(-40.0, -13.0, 0.deg)
-        var centerExitPose = Pose2d(-50.0, -13.0, 0.deg)
-        var stackPose = Pose2d(-61.5, -17.0, 0.deg)
-        var crossPose = Pose2d(30.0, -13.0, 0.deg)
+        var startPose = Pose2d(16.0, -3 * tile + 9.0, (90).deg)
+        var leftPlopPose = Pose2d(10.0, -35.0, (-180).deg)
+        var leftPlacePose = Pose2d(50.0, -30.0, 0.deg)
+        var centerPlopPose = Pose2d(16.0, -37.0, (90).deg)
+        var centerPlacePose = Pose2d(50.0, -36.0, 0.deg)
+        var rightPlopPose = Pose2d(26.0, -46.0, (90).deg)
+        var rightPlacePose = Pose2d(50.0, -45.0, 0.deg)
+        var parkPose = Pose2d(52.0, -64.0, 0.deg)
 
-        var stackHigh = 0.47
+        var exitTangent = (-120).deg
+        var exitPose = Pose2d(18.0, -60.0, 0.deg)
+        var stackPose = Pose2d(-61.0, -36.0, 0.deg)
+        var crossPose = Pose2d(-36.0, -60.0, 0.deg)
+        var stackPlacePose = Pose2d(47.0, -45.0, 0.deg)
+
+        var stackHigh = 0.5
     }
 
     override fun preInit() {
@@ -67,29 +70,41 @@ class RedCycleAuto : CommandOpMode() {
 
     override fun preStart() {
         cancelAll()
+        robot.outtake.ready()
         robot.drive.poseEstimate = startPose
-        val location = pipeline.lastKnownLocation
 
-        val (plopPose, placePose) = when (location) {
+        val (plopPose, placePose) = when (pipeline.lastKnownLocation) {
             PropPipeline.PropLocation.Left -> leftPlopPose to leftPlacePose
             PropPipeline.PropLocation.Center -> centerPlopPose to centerPlacePose
             PropPipeline.PropLocation.Right -> rightPlopPose to rightPlacePose
         }
-
-        val exitPose = if (location == PropPipeline.PropLocation.Center) {
-            centerExitPose
-        } else regularExitPose
-        val purplePlaceCommand = robot.drive.pathBuilder(startPose)
+        val purplePlopCommand = robot.drive.pathBuilder(startPose)
             .lineToSplineHeading(plopPose)
             .then(robot.pixelPlopper.plop())
+            .build()
+        val yellowPlaceCommand = robot.drive.pathBuilder(plopPose)
             .back(3.0)
-            .lineToSplineHeading(exitPose)
+            .lineToSplineHeading(placePose)
+            .wait(0.1)
+            .forward(3.0).withTimeout(1.0)
+            .then(robot.outtake.extend())
+            .wait(2.0)
+            .then {
+                robot.outtake.releaseRight()
+                robot.outtake.releaseLeft()
+            }
+            .wait(1.0)
+            .then(robot.outtake.reset())
+            .back(3.0)
             .build()
 
-        val intakeAndCrossCommand = robot.drive.pathBuilder(exitPose)
-            .lineToSplineHeading(stackPose)
+        val cycleCommand = robot.drive.pathBuilder(placePose)
+            .setTangent(exitTangent)
+            .splineToSplineHeading(exitPose, exitPose.heading)
+            .splineToConstantHeading(crossPose.vec(), crossPose.heading)
+            .splineToSplineHeading(stackPose, stackPose.heading)
             .and(
-                robot.intake.waitForServoPosition(stackHigh)
+                WaitCommand(3.0) then robot.intake.waitForServoPosition(RedCycleAuto.stackHigh)
                     .then {
                         robot.intake.servoState = Intake.ServoState.STACK
                         robot.intake.motorState = Intake.MotorState.ACTIVE
@@ -98,38 +113,30 @@ class RedCycleAuto : CommandOpMode() {
             .then(Command.emptyCommand().waitUntil {
                 robot.intake.numPixels == 2
             }.withTimeout(3.0))
-            .splineTo(crossPose.vec(), crossPose.heading)
-            .splineTo(placePose.vec(), placePose.heading)
-            .and(WaitCommand(0.5).then(robot.transfer()))
-//            .forward(3.0).withTimeout(1.0)
-            .build()
-
-        val yellowPlaceCommand = robot.drive.pathBuilder(placePose)
-            .then(
-                robot.outtake.extend().and(
-                    robot.verticalExtension.goToPosition(200.0)
-                )
-            )
-            .forward(3.0).withTimeout(0.5)
+            .splineToSplineHeading(Pose2d(crossPose.vec(), exitPose.heading), crossPose.heading)
+            .splineToConstantHeading(exitPose.vec(), -crossPose.heading)
+            .splineToSplineHeading(stackPlacePose, stackPlacePose.heading)
+            .wait(0.1)
+            .then(robot.verticalExtension.goToPosition(200.0) then robot.outtake.extend())
             .wait(1.0)
             .then {
-                robot.outtake.releaseLeft()
                 robot.outtake.releaseRight()
+                robot.outtake.releaseLeft()
             }
             .wait(1.0)
-            .then(robot.outtake.reset())
-            .then(robot.verticalExtension.goToPosition(0.0))
+            .then(robot.outtake.reset() then robot.verticalExtension.goToPosition(0.0))
+            .build()
+
+        val parkCommand = robot.drive.pathBuilder(leftPlacePose - Pose2d(3.0))
+            .lineToSplineHeading(parkPose)
             .build()
 
         SequentialCommand(
             true,
-            robot.outtake.ready(),
-            Command.of {
-                robot.drive.setDrivePower(Pose2d(0.1))
-            },
-            purplePlaceCommand,
-            intakeAndCrossCommand,
-            yellowPlaceCommand
+            purplePlopCommand,
+            yellowPlaceCommand,
+            cycleCommand,
+            parkCommand
         ).thenStopOpMode().schedule()
     }
 }

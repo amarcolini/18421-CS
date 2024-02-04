@@ -19,7 +19,7 @@ class DriveControlDouble : CommandOpMode() {
     override fun preInit() {
         robot.pixelPlopper.prime()
         robot.outtake.reset().schedule()
-        robot.verticalExtension.initializeEncoders().schedule()
+//        robot.verticalExtension.initializeEncoders().schedule()
         telem.setDisplayFormat(Telemetry.DisplayFormat.HTML)
     }
 
