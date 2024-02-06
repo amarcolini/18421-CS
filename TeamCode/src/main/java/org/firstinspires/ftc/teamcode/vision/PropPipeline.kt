@@ -3,22 +3,14 @@ package org.firstinspires.ftc.teamcode.vision
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import com.acmerobotics.dashboard.config.variable.ConfigVariable
-import com.acmerobotics.dashboard.config.variable.CustomVariable
-import com.amarcolini.joos.dashboard.ConfigUtils
 import com.amarcolini.joos.dashboard.JoosConfig
-import com.amarcolini.joos.dashboard.MutableConfigProvider
-import org.opencv.core.Core
-import org.opencv.core.Mat
-import org.opencv.core.Rect
-import org.opencv.core.Scalar
+import org.opencv.core.*
 import org.opencv.imgproc.Imgproc
 import org.openftc.easyopencv.OpenCvPipeline
 import kotlin.math.roundToInt
 
 @JoosConfig
 class PropPipeline(private val leftIsVisible: Boolean) : OpenCvPipeline() {
-
     enum class PropLocation {
         Left, Center, Right
     }
@@ -29,36 +21,22 @@ class PropPipeline(private val leftIsVisible: Boolean) : OpenCvPipeline() {
     private lateinit var dst: Mat
     private lateinit var tmp: Mat
 
-    private fun Rect.mirror() = Rect(640 - x - width, y, width, height)
+    private fun Rect.mirror() = Rect(imageSize.width.toInt() - x - width, y, width, height)
 
-    val midRect = Rect(100, 200, 250, 200).run {
-        if (leftIsVisible) this.mirror() else this
+    private val midRect = mRect.run {
+        if (!leftIsVisible) this.mirror() else this
     }
-    val sideRect = Rect(520, 200, 640 - 520, 480 - 200).run {
-        if (leftIsVisible) this.mirror() else this
+    private val sideRect = sRect.run {
+        if (!leftIsVisible) this.mirror() else this
     }
-    var lowerBound = Scalar(0.0, 100.0, 50.0)
-    var upperBound = Scalar(255.0, 255.0, 255.0)
 
     companion object {
+        val imageSize = Size(800.0, 600.0)
+        val mRect = Rect(350, 300, 250, 200)
+        val sRect = Rect(0, 280, 220, 250)
+        private val lowerBound = Scalar(0.0, 100.0, 50.0)
+        private val upperBound = Scalar(255.0, 255.0, 255.0)
         var showProcess = true
-
-        @MutableConfigProvider(1)
-        @JvmStatic
-        fun scalarConfigProvider(scalar: Scalar): ConfigVariable<*> = CustomVariable().apply {
-            putVariable(
-                "v0",
-                ConfigUtils.createVariable({ scalar.`val`[0] }, { scalar.`val`[0] = it })
-            )
-            putVariable(
-                "v1",
-                ConfigUtils.createVariable({ scalar.`val`[1] }, { scalar.`val`[1] = it })
-            )
-            putVariable(
-                "v2",
-                ConfigUtils.createVariable({ scalar.`val`[2] }, { scalar.`val`[2] = it })
-            )
-        }
     }
 
     private fun strokeRect(
@@ -85,7 +63,7 @@ class PropPipeline(private val leftIsVisible: Boolean) : OpenCvPipeline() {
     override fun init(mat: Mat) {
         dst = Mat.zeros(mat.size(), mat.type())
         tmp = Mat.zeros(mat.size(), mat.type())
-        assert(mat.size().width == 640.0 && mat.size().height == 480.0)
+        assert(mat.size().width == imageSize.width && mat.size().height == imageSize.height)
     }
 
     private data class DrawData(
@@ -102,7 +80,7 @@ class PropPipeline(private val leftIsVisible: Boolean) : OpenCvPipeline() {
         val midMean = Core.sumElems(dst.submat(midRect).also { tempMats += it }).`val`[0] / 1e5
         val sideMean = Core.sumElems(dst.submat(sideRect).also { tempMats += it }).`val`[0] / 1e5
         val location: PropLocation = when {
-            midMean <= 15 && sideMean <= 15 -> if (leftIsVisible) PropLocation.Right else PropLocation.Left
+            midMean <= 20 && sideMean <= 20 -> if (leftIsVisible) PropLocation.Right else PropLocation.Left
             sideMean > midMean -> if (leftIsVisible) PropLocation.Left else PropLocation.Right
             else -> PropLocation.Center
         }

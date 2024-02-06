@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.opmode.auto
+package org.firstinspires.ftc.teamcode.opmode
 
 import com.amarcolini.joos.command.Command
 import com.amarcolini.joos.command.CommandOpMode

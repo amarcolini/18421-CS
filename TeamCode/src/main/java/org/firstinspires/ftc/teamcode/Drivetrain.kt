@@ -1,14 +1,9 @@
 package org.firstinspires.ftc.teamcode
 
-import com.amarcolini.joos.command.Command
 import com.amarcolini.joos.command.CommandScheduler.telem
-import com.amarcolini.joos.command.Component
-import com.amarcolini.joos.command.FunctionalCommand
 import com.amarcolini.joos.control.DCMotorFeedforward
 import com.amarcolini.joos.control.PIDCoefficients
 import com.amarcolini.joos.dashboard.JoosConfig
-import com.amarcolini.joos.drive.AbstractMecanumDrive
-import com.amarcolini.joos.drive.DriveSignal
 import com.amarcolini.joos.followers.HolonomicGVFFollower
 import com.amarcolini.joos.followers.HolonomicPIDVAFollower
 import com.amarcolini.joos.followers.PathFollower
@@ -18,24 +13,25 @@ import com.amarcolini.joos.geometry.Pose2d
 import com.amarcolini.joos.hardware.Motor
 import com.amarcolini.joos.hardware.MotorGroup
 import com.amarcolini.joos.hardware.drive.DrivePathFollower
-import com.amarcolini.joos.localization.ThreeTrackingWheelLocalizer
-import com.amarcolini.joos.trajectory.Trajectory
-import com.amarcolini.joos.trajectory.TrajectoryBuilder
+import com.amarcolini.joos.hardware.drive.DriveTrajectoryFollower
+import com.amarcolini.joos.hardware.drive.MecanumDrive
+import com.amarcolini.joos.hardware.drive.Standard3WheelLocalizer
 import com.amarcolini.joos.trajectory.constraints.MecanumConstraints
 import com.amarcolini.joos.util.deg
-import org.firstinspires.ftc.teamcode.opmode.auto.GVFTest
+import org.firstinspires.ftc.teamcode.opmode.GVFTest
 
 @JoosConfig
 class Drivetrain(
-    val motors: MotorGroup,
+    motors: MotorGroup,
     val encoders: List<Motor.Encoder>
-) : AbstractMecanumDrive(
+) : MecanumDrive(
+    motors,
     Companion.trackWidth, Companion.trackWidth, Companion.lateralMultiplier
-), Component, DrivePathFollower {
+), DriveTrajectoryFollower, DrivePathFollower {
     val parallelEncoders = listOf(encoders[0], encoders[1])
     val perpEncoder = encoders[2]
 
-    val constraints = MecanumConstraints(
+    override val constraints = MecanumConstraints(
         48.0,
         trackWidth,
         wheelBase,
@@ -46,7 +42,9 @@ class Drivetrain(
         250.deg
     )
 
-    val trajectoryFollower: TrajectoryFollower = HolonomicPIDVAFollower(
+    val motorGroup = motors
+
+    override val trajectoryFollower: TrajectoryFollower = HolonomicPIDVAFollower(
         axialCoeffs, lateralCoeffs, headingCoeffs, Pose2d(0.5, 0.5, 2.deg), 0.5
     )
 
@@ -73,16 +71,8 @@ class Drivetrain(
         GVFTest.kN, GVFTest.kOmega, GVFTest.kX, GVFTest.kY, GVFTest.pidCoefficients,
     )
 
-    override fun setRunMode(runMode: Motor.RunMode) {
-        motors.runMode = runMode
-    }
-
-    override fun setZeroPowerBehavior(zeroPowerBehavior: Motor.ZeroPowerBehavior) {
-        motors.zeroPowerBehavior = zeroPowerBehavior
-    }
-
     override fun update() {
-        updatePoseEstimate()
+        super<MecanumDrive>.update()
         if (dashboardEnabled) {
             val trajectory = getCurrentTrajectory()
             if (trajectory != null) {
@@ -98,67 +88,10 @@ class Drivetrain(
         }
     }
 
-    fun pathBuilder(
+    fun pathCommandBuilder(
         startPose: Pose2d = poseEstimate,
         startTangent: Angle = startPose.heading
     ) = PathCommandBuilder(this, startPose, startTangent)
-
-    /**
-     * Returns a [TrajectoryBuilder] with the constraints of this drive.
-     */
-    @JvmOverloads
-    fun trajectoryBuilder(
-        startPose: Pose2d = poseEstimate,
-        startTangent: Angle = startPose.heading
-    ): TrajectoryBuilder = TrajectoryBuilder(
-        startPose,
-        startTangent,
-        constraints.velConstraint,
-        constraints.accelConstraint,
-        constraints.maxAngVel, constraints.maxAngAccel, constraints.maxAngJerk
-    )
-
-
-    /**
-     * Returns a [TrajectoryBuilder] with the constraints of this drive.
-     */
-    @JvmOverloads
-    fun trajectoryBuilder(
-        startPose: Pose2d = poseEstimate,
-        reversed: Boolean
-    ): TrajectoryBuilder = TrajectoryBuilder(
-        startPose,
-        reversed,
-        constraints.velConstraint,
-        constraints.accelConstraint,
-        constraints.maxAngVel, constraints.maxAngAccel, constraints.maxAngJerk
-    )
-
-    /**
-     * Returns a [Command] that follows the provided trajectory.
-     */
-    fun followTrajectory(trajectory: Trajectory): Command {
-        poseHistory.clear()
-        return if (!trajectoryFollower.isFollowing()) {
-            FunctionalCommand(
-                init = { trajectoryFollower.followTrajectory(trajectory) },
-                execute = {
-                    setDriveSignal(trajectoryFollower.update(poseEstimate, poseVelocity).also {
-                        telem.addData("driveSignal", it)
-                    })
-                },
-                isFinished = { !trajectoryFollower.isFollowing() },
-                end = { setDriveSignal(DriveSignal()) },
-                requirements = setOf(this)
-            )
-        } else Command.emptyCommand()
-    }
-
-    /**
-     * Returns the trajectory currently being followed by this drive, if any.
-     */
-    fun getCurrentTrajectory(): Trajectory? =
-        if (trajectoryFollower.isFollowing()) trajectoryFollower.trajectory else null
 
     companion object {
         val feedforwardCoeffs = DCMotorFeedforward(0.017, 0.0002, 0.05)
@@ -186,32 +119,8 @@ class Drivetrain(
             it.distancePerTick = distPerTick
         }
 
-        localizer = Odometry()
-    }
-
-    private inner class Odometry : ThreeTrackingWheelLocalizer(
-        listOf(
-            leftPose,
-            rightPose,
-            perpPose
+        localizer = Standard3WheelLocalizer(
+            encoders, listOf(leftPose, rightPose, perpPose)
         )
-    ) {
-        override fun getWheelPositions(): List<Double> = encoders.map { it.distance }
-
-        override fun getWheelVelocities(): List<Double> = encoders.map { it.distanceVelocity }
-    }
-
-    override fun getWheelPositions(): List<Double> = motors.getDistances()
-    override fun getWheelVelocities(): List<Double> = motors.getDistanceVelocities()
-
-    override fun setMotorPowers(
-        frontLeft: Double,
-        backLeft: Double,
-        backRight: Double,
-        frontRight: Double
-    ) = motors.setPowers(listOf(frontLeft, backLeft, backRight, frontRight))
-
-    override fun setWheelVelocities(velocities: List<Double>, accelerations: List<Double>) {
-        motors.setDistanceVelocities(velocities, accelerations)
     }
 }

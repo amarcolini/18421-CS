@@ -2,7 +2,6 @@ package org.firstinspires.ftc.teamcode.opmode
 
 import com.acmerobotics.dashboard.FtcDashboard
 import com.amarcolini.joos.command.CommandOpMode
-import com.amarcolini.joos.geometry.Vector2d
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp
 import org.firstinspires.ftc.robotcore.internal.camera.calibration.CameraCalibrationHelper
 import org.firstinspires.ftc.teamcode.CSRobot
@@ -15,19 +14,19 @@ import org.openftc.easyopencv.OpenCvCameraRotation
 class AprilTagTest : CommandOpMode() {
     private val robot by robot<CSRobot>()
     val pipeline = AprilTagPipeline {
-        CameraCalibrationHelper.getInstance().getCalibration(robot.webcam.calibrationIdentity, 640, 480)
+        CameraCalibrationHelper.getInstance().getCalibration(robot.frontCamera.calibrationIdentity, 640, 480)
     }
 
     override fun preInit() {
-        robot.webcam.openCameraDeviceAsync(object : OpenCvCamera.AsyncCameraOpenListener {
+        robot.frontCamera.openCameraDeviceAsync(object : OpenCvCamera.AsyncCameraOpenListener {
             override fun onOpened() {
-                robot.webcam.startStreaming(
+                robot.frontCamera.startStreaming(
                     640,
                     480,
                     OpenCvCameraRotation.UPRIGHT
                 )
-                robot.webcam.setPipeline(pipeline)
-                FtcDashboard.getInstance().startCameraStream(robot.webcam, 0.0)
+                robot.frontCamera.setPipeline(pipeline)
+                FtcDashboard.getInstance().startCameraStream(robot.frontCamera, 0.0)
             }
 
             override fun onError(errorCode: Int) {

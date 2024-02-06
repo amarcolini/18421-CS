@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode
 
+import com.acmerobotics.dashboard.FtcDashboard
 import com.amarcolini.joos.command.*
 import com.amarcolini.joos.command.CommandScheduler.telem
 import com.amarcolini.joos.extensions.getAll
@@ -9,7 +10,10 @@ import com.amarcolini.joos.hardware.MotorGroup
 import com.amarcolini.joos.hardware.Servo
 import com.amarcolini.joos.util.NanoClock
 import com.qualcomm.hardware.lynx.LynxModule
+import org.opencv.core.Size
+import org.openftc.easyopencv.OpenCvCamera
 import org.openftc.easyopencv.OpenCvCameraFactory
+import org.openftc.easyopencv.OpenCvCameraRotation
 import kotlin.math.roundToInt
 
 class CSRobot : Robot() {
@@ -56,7 +60,7 @@ class CSRobot : Robot() {
         Servo(hMap, "drone_launcher")
     )
 
-    val webcam = OpenCvCameraFactory.getInstance().createWebcam(
+    val frontCamera = OpenCvCameraFactory.getInstance().createWebcam(
         hMap("webcam"),
         hMap.appContext.resources
             .getIdentifier("cameraMonitorViewId", "id", hMap.appContext.packageName)
@@ -104,5 +108,37 @@ class CSRobot : Robot() {
             .onEnd {
                 intake.motorState = Intake.MotorState.STOPPED
             }
+    }
+
+    private fun openCameraAsync(camera: OpenCvCamera, size: Size, onOpen: () -> Unit) {
+        camera.openCameraDeviceAsync(
+            object : OpenCvCamera.AsyncCameraOpenListener {
+                override fun onOpened() {
+                    camera.startStreaming(
+                        size.width.toInt(),
+                        size.height.toInt(),
+                        OpenCvCameraRotation.UPRIGHT
+                    )
+                    onOpen()
+                }
+
+                override fun onError(errorCode: Int) {
+                    telem.addLine("Camera failed to open!!").setRetained(true)
+                    telem.update()
+                    stopOpMode()
+                }
+            })
+    }
+
+    fun openFrontCameraAsync(
+        useDashboard: Boolean = true,
+        size: Size = Size(800.0, 600.0),
+        fps: Double = 0.0,
+        onOpen: () -> Unit
+    ) {
+        openCameraAsync(frontCamera, size) {
+            if (useDashboard) FtcDashboard.getInstance().startCameraStream(frontCamera, fps)
+            onOpen()
+        }
     }
 }

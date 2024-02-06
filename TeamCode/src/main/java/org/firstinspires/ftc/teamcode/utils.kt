@@ -96,7 +96,7 @@ class PathCommandBuilder(
 
     fun withTimeout(duration: Double) = race(WaitCommand(duration))
 
-    fun build(): Command {
+    fun build(): PathCommand {
         pushAndAddPath()
         return PathCommand(currentCommand, startPose, currentPose)
     }

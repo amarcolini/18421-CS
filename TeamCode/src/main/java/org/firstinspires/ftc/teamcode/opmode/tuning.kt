@@ -35,8 +35,8 @@ class ForwardPushTest : CommandOpMode() {
         val initTicks = getTicks()
         val distancePerTick = robot.drive.parallelEncoders[0].distancePerTick
 
-        robot.drive.motors.zeroPowerBehavior = Motor.ZeroPowerBehavior.FLOAT
-        robot.drive.motors.setPower(0.0)
+        robot.drive.motorGroup.zeroPowerBehavior = Motor.ZeroPowerBehavior.FLOAT
+        robot.drive.motorGroup.setPower(0.0)
 
         schedule(true) {
             val ticks = getTicks() - initTicks
@@ -50,7 +50,7 @@ class ForwardPushTest : CommandOpMode() {
 class LateralPushTest : CommandOpMode() {
     private val robot by robot<CSRobot>()
 
-    private fun getTicks() = robot.drive.motors.getPositions().let {
+    private fun getTicks() = robot.drive.motorGroup.getPositions().let {
         0.25 * (it[0] + it[1] + it[2] + it[3])
     }
 
@@ -58,8 +58,8 @@ class LateralPushTest : CommandOpMode() {
         val initTicks = getTicks()
         val distancePerTick = robot.drive.encoders[0].distancePerTick
 
-        robot.drive.motors.zeroPowerBehavior = Motor.ZeroPowerBehavior.FLOAT
-        robot.drive.motors.setPower(0.0)
+        robot.drive.motorGroup.zeroPowerBehavior = Motor.ZeroPowerBehavior.FLOAT
+        robot.drive.motorGroup.setPower(0.0)
 
         schedule(true) {
             val ticks = getTicks() - initTicks
@@ -294,7 +294,7 @@ class MotorDirectionDebugger : CommandOpMode() {
             )
 
         schedule(true) {
-            robot.drive.motors.zip(buttonMap).forEach { (motor, condition) ->
+            robot.drive.motorGroup.zip(buttonMap).forEach { (motor, condition) ->
                 motor.power = if (condition(gamepad.p1)) 1.0 else 0.0
             }
         }

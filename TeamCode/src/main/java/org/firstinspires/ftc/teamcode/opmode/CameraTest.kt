@@ -23,16 +23,16 @@ class CameraTest : CommandOpMode() {
     }
 
     override fun preInit() {
-        robot.webcam.openCameraDeviceAsync(object : OpenCvCamera.AsyncCameraOpenListener {
+        robot.frontCamera.openCameraDeviceAsync(object : OpenCvCamera.AsyncCameraOpenListener {
             override fun onOpened() {
-                robot.webcam.startStreaming(
+                robot.frontCamera.startStreaming(
                     640,
                     480,
                     OpenCvCameraRotation.UPRIGHT,
                     OpenCvWebcam.StreamFormat.MJPEG
                 )
-                robot.webcam.setPipeline(pipeline)
-                FtcDashboard.getInstance().startCameraStream(robot.webcam, 0.0)
+                robot.frontCamera.setPipeline(pipeline)
+                FtcDashboard.getInstance().startCameraStream(robot.frontCamera, 0.0)
 
                 schedule(true) {
                     telem.addData("prop location", pipeline.lastKnownLocation)
