@@ -1,11 +1,9 @@
 package org.firstinspires.ftc.teamcode.opmode.auto
 
-import com.amarcolini.joos.command.Command
-import com.amarcolini.joos.command.CommandOpMode
-import com.amarcolini.joos.command.SequentialCommand
-import com.amarcolini.joos.command.WaitCommand
+import com.amarcolini.joos.command.*
 import com.amarcolini.joos.dashboard.JoosConfig
 import com.amarcolini.joos.geometry.Pose2d
+import com.amarcolini.joos.geometry.Vector2d
 import com.amarcolini.joos.util.deg
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous
 import org.firstinspires.ftc.teamcode.CSRobot
@@ -31,12 +29,14 @@ class RedSussyWussyAutonomussy : CommandOpMode() {
 
         var exitTangent = (-120).deg
         var exitPose = Pose2d(18.0, -60.0, 0.deg)
-        var stackPose = Pose2d(-59.0, -35.0, 0.deg)
+        var stackPose = Pose2d(-59.0, -36.0, 0.deg)
         var crossPose = Pose2d(-36.0, -60.0, 0.deg)
         var stackPlacePose = Pose2d(50.0, -42.0, 0.deg)
 
-        var stackHigh = 0.5
+        var stackHigh = 0.52
     }
+
+    private var stackPos = 0.52
 
     override fun preInit() {
         robot.outtake.init()
@@ -64,66 +64,86 @@ class RedSussyWussyAutonomussy : CommandOpMode() {
             .then(robot.pixelPlopper.plop())
             .build()
         val yellowPlaceCommand = robot.drive.pathCommandBuilder(plopPose)
-            .back(3.0)
-            .lineToSplineHeading(placePose)
-            .wait(0.1)
+            .setTangent { it + 180.deg }
+            .splineToSplineHeading(placePose, placePose.heading)
+            .and(WaitCommand(1.0) then robot.outtake.extend())
+            .setFollower(robot.drive.slowFollower)
             .forward(3.0).withTimeout(1.0)
-            .then(robot.outtake.extend())
-            .wait(0.5)
+            .resetFollower()
             .then {
                 robot.outtake.releaseRight()
                 robot.outtake.releaseLeft()
-            }
-            .wait(0.5)
-            .then(robot.outtake.reset())
-            .back(3.0)
+            }.wait(0.5)
             .build()
 
         val cycleCommand = robot.drive.pathCommandBuilder(placePose)
             .setTangent(exitTangent)
             .splineToSplineHeading(exitPose, exitPose.heading + 180.deg)
             .splineToConstantHeading(crossPose.vec(), crossPose.heading + 180.deg)
-            .splineTo(stackPose.vec(), stackPose.heading + 180.deg)
+            .splineTo(stackPose.vec() + Vector2d(5.0), stackPose.heading + 180.deg)
             .and(
-                WaitCommand(3.0) then robot.intake.waitForServoPosition(stackHigh)
+                (robot.outtake.reset() and robot.verticalExtension.goToPosition(0.0)) wait 1.0 then Command.select(robot.intake) {
+                    robot.intake.waitForServoPosition(
+                        stackPos
+                    )
+                }
                     .then {
+                        stackPos -= 0.1
                         robot.intake.servoState = Intake.ServoState.STACK
                         robot.intake.motorState = Intake.MotorState.ACTIVE
                     }
             )
-            .then((
-                    Command.emptyCommand().waitUntil {
-                        robot.intake.numPixels == 2
-                    }.and(Command.select {
-                        WaitCommand(0.3) then robot.intake.waitForServoPosition(robot.intake.servo.position + 0.03)
-                    }.repeatForever())
-                    ).withTimeout(2.0)
+            .setFollower(robot.drive.slowFollower)
+            .setTangent(stackPose.heading + 180.deg)
+            .splineTo(stackPose.vec(), stackPose.heading + 180.deg)
+            .strafeLeft(2.0)
+            .and(
+                (
+                        Command.emptyCommand().waitUntil
+                        {
+                            robot.intake.numPixels == 2
+                        }.and(
+                            Command.select
+                            {
+                                WaitCommand(0.4) then robot.intake.waitForServoPosition(robot.intake.servo.position + 0.01)
+                            }.repeatForever()
+                        )
+                        ).withTimeout(1.5)
             )
+            .resetFollower()
             .setTangent(stackPose.heading)
+            .forward(5.0)
             .splineToSplineHeading(Pose2d(crossPose.vec(), exitPose.heading), crossPose.heading)
             .splineToConstantHeading(exitPose.vec(), crossPose.heading)
             .splineToSplineHeading(stackPlacePose, stackPlacePose.heading)
-            .and(WaitCommand(1.0) then robot.transfer())
-            .wait(0.1)
-            .then(robot.verticalExtension.goToPosition(200.0) then robot.outtake.extend())
+            .and(
+                SequentialCommand(
+                    WaitCommand(0.5),
+                    robot.transfer(),
+                    FunctionalCommand(isFinished =
+                    { robot.drive.poseEstimate.x > 10.0 }),
+                    (robot.verticalExtension.goToPosition(200.0) and robot.outtake.extend())
+                )
+            )
+            .setFollower(robot.drive.slowFollower)
             .forward(3.0).withTimeout(0.5)
+            .resetFollower()
             .then {
                 robot.outtake.releaseRight()
                 robot.outtake.releaseLeft()
-            }
-            .wait(0.5)
-            .then(robot.outtake.reset() then robot.verticalExtension.goToPosition(0.0))
+            }.wait(0.5)
             .build()
 
         val parkCommand = robot.drive.pathCommandBuilder(leftPlacePose - Pose2d(3.0))
             .lineToSplineHeading(parkPose)
+            .and(robot.outtake.reset() and robot.verticalExtension.goToPosition(0.0))
             .build()
 
         SequentialCommand(
             true,
             purplePlopCommand,
             yellowPlaceCommand,
-            cycleCommand,
+            cycleCommand.repeat(2),
             parkCommand
         ).thenStopOpMode().schedule()
     }

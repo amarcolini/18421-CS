@@ -8,6 +8,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.*
 import org.firstinspires.ftc.robotcore.internal.camera.calibration.CameraCalibration
 import org.firstinspires.ftc.teamcode.Transform3d
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection
+import org.firstinspires.ftc.vision.apriltag.AprilTagGameDatabase.getCenterStageTagLibrary
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor
 import org.opencv.core.Mat
 import org.openftc.easyopencv.TimestampedOpenCvPipeline
@@ -21,13 +22,14 @@ class AprilTagPipeline(var calibration: () -> CameraCalibration) : TimestampedOp
     }
 
     val processor = AprilTagProcessor
-        .easyCreateWithDefaults()
-//        .Builder()
-//        .setDrawTagID(true)
-//        .setDrawTagOutline(true)
-//        .setDrawAxes(true)
-//        .setTagLibrary(getCenterStageTagLibrary())
-//        .build()
+//        .easyCreateWithDefaults()
+        .Builder()
+        .setDrawTagID(true)
+        .setDrawTagOutline(true)
+        .setDrawAxes(true)
+        .setTagLibrary(getCenterStageTagLibrary())
+        .setLensIntrinsics(926.725118, 940.8540229, 443.3417136, 310.9205909)
+        .build()
 
     override fun init(mat: Mat) {
         processor.init(mat.width(), mat.height(), calibration())
@@ -64,11 +66,12 @@ class AprilTagPipeline(var calibration: () -> CameraCalibration) : TimestampedOp
 
         val cameraToTagTransform = Transform3d(
             VectorF(
+                tag.rawPose.x.toFloat(),
+                tag.rawPose.y.toFloat(),
                 tag.rawPose.z.toFloat(),
-                -tag.rawPose.x.toFloat(),
-                tag.rawPose.y.toFloat()
             ),
-            xQ.multiply(yQ, 0).multiply(zQ, 0)
+//        xQ.multiply(yQ, 0).multiply(zQ, 0),
+            Transform3d.matrixToQuaternion(tag.rawPose.R)
         )
 
         // Inverse the previous transform to get the location of the camera from the tag

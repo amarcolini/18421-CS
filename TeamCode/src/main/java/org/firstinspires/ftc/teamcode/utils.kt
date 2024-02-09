@@ -4,10 +4,10 @@ import com.amarcolini.joos.command.Command
 import com.amarcolini.joos.command.Component
 import com.amarcolini.joos.command.SequentialCommand
 import com.amarcolini.joos.command.WaitCommand
+import com.amarcolini.joos.followers.PathFollower
 import com.amarcolini.joos.geometry.Angle
 import com.amarcolini.joos.geometry.Pose2d
 import com.amarcolini.joos.geometry.Vector2d
-import com.amarcolini.joos.hardware.drive.DrivePathFollower
 import com.amarcolini.joos.path.Path
 import com.amarcolini.joos.path.PathBuilder
 import com.amarcolini.joos.path.PathContinuityViolationException
@@ -16,13 +16,15 @@ import com.amarcolini.joos.path.heading.*
 const val tile = 24.0
 
 class PathCommandBuilder(
-    private val drive: DrivePathFollower,
+    private val drive: Drivetrain,
     private val startPose: Pose2d,
     startTangent: Angle = startPose.heading,
 ) {
     private var builder = PathBuilder(startPose, startTangent)
     private var currentCommand: Command = SequentialCommand()
     private var currentPose = startPose
+    private val defaultFollower = drive.pathFollower
+    private var currentFollower: PathFollower = defaultFollower
 
     private fun tryAdd(segment: PathBuilder.() -> Unit): PathCommandBuilder {
         try {
@@ -49,7 +51,7 @@ class PathCommandBuilder(
     }
 
     private fun pushPathCommand(newTangent: (Angle) -> Angle = { it }) = pushPath(newTangent)?.let {
-        drive.followerPath(it)
+        drive.followPath(it, currentFollower)
     }
 
     private fun pushAndAddPath(newTangent: (Angle) -> Angle = { it }) {
@@ -57,6 +59,14 @@ class PathCommandBuilder(
             currentCommand = currentCommand then it
         }
     }
+
+    fun setFollower(follower: PathFollower): PathCommandBuilder {
+        if (follower != currentFollower) pushAndAddPath()
+        currentFollower = follower
+        return this
+    }
+
+    fun resetFollower() = setFollower(defaultFollower)
 
     fun setTangent(angle: (Angle) -> Angle): PathCommandBuilder {
         pushAndAddPath(angle)

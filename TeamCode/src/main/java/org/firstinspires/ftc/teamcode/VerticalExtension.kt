@@ -28,6 +28,7 @@ class VerticalExtension(
     var positionControlEnabled = false
 
     fun setTargetPosition(position: Double) {
+        positionController.reset()
         positionController.targetPosition = position
         positionController.update(
             motors.currentPosition,

@@ -5,8 +5,7 @@ import com.amarcolini.joos.geometry.Pose2d
 import com.amarcolini.joos.util.rad
 import org.firstinspires.ftc.robotcore.external.matrices.MatrixF
 import org.firstinspires.ftc.robotcore.external.matrices.VectorF
-import org.firstinspires.ftc.robotcore.external.navigation.Quaternion
-import kotlin.math.atan2
+import org.firstinspires.ftc.robotcore.external.navigation.*
 import kotlin.math.sqrt
 
 
@@ -37,14 +36,15 @@ class Transform3d {
 
     fun unaryMinusInverse(): Transform3d {
         val Q = rotation.inverse()
-        val t = Q.applyToVector(translation)
-        t.multiply(-1f)
+        val t = Q.applyToVector(
+            translation
+        ).multiplied(-1f)
         return Transform3d(t, Q)
     }
 
     fun plus(P: Transform3d): Transform3d {
-        val t = P.translation.added(P.rotation.applyToVector(translation))
-        val Q = P.rotation.multiply(rotation, System.nanoTime())
+        val t = translation.added(rotation.applyToVector(P.translation))
+        val Q = rotation.multiply(P.rotation, System.nanoTime())
         return Transform3d(t, Q)
     }
 
@@ -52,11 +52,19 @@ class Transform3d {
         //        get() = atan2(
 //            2.0 * (rotation.y * rotation.z + rotation.w * rotation.x),
 //            (rotation.w * rotation.w - rotation.x * rotation.x - rotation.y * rotation.y + rotation.z * rotation.z).toDouble()
-//        )
+//        ).rad
+//        get() {
+//            val a1 = atan2(rotation.x + rotation.z, rotation.w - rotation.y)
+//            val a2 = atan2(rotation.z - rotation.x, rotation.w + rotation.y)
+//            return (a1 + a2).rad
+//        }
         get() {
-            val a1 = atan2(rotation.x + rotation.z, rotation.w - rotation.y)
-            val a2 = atan2(rotation.z - rotation.x, rotation.w + rotation.y)
-            return (a1 + a2).rad
+            return Orientation.getOrientation(
+                rotation.toMatrix(),
+                AxesReference.EXTRINSIC,
+                AxesOrder.XYZ,
+                AngleUnit.RADIANS
+            ).thirdAngle.rad
         }
 
     fun toPose2d(): Pose2d {
@@ -66,6 +74,8 @@ class Transform3d {
     }
 
     companion object {
+        private val zeroVector = VectorF(0f, 0f, 0f)
+
         fun matrixToQuaternion(m1: MatrixF): Quaternion {
             val w = (sqrt(1.0 + m1[0, 0] + m1[1, 1] + m1[2, 2]) / 2.0).toFloat()
             val w4 = (4.0 * w).toFloat()
