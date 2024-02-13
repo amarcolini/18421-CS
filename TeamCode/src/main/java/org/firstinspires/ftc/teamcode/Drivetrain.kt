@@ -125,9 +125,14 @@ class Drivetrain(
     companion object {
         val feedforwardCoeffs = DCMotorFeedforward(0.017, 0.0002, 0.05)
         var distPerTick = 0.002956143499653
-        var leftPose = Pose2d(0.0, 7.325, 0.deg)
-        var rightPose = Pose2d(0.0, -7.325, 0.deg)
+        //7.30925
+        var leftPose = Pose2d(0.0, 7.288565, 0.deg)
+        var rightPose = Pose2d(0.0, -7.288565, 0.deg)
+        //7.26788
+        //7.22651
+        //5.801
         var perpPose = Pose2d(5.801, 0.0, (-90).deg)
+        //6.118936
         var trackWidth = 13.5
         var lateralMultiplier = 0.7
 

@@ -20,18 +20,18 @@ class RedSussyWussyAutonomussy : CommandOpMode() {
     companion object {
         var startPose = Pose2d(16.0, -3 * tile + 9.0, (90).deg)
         var leftPlopPose = Pose2d(10.0, -35.0, (-180).deg)
-        var leftPlacePose = Pose2d(50.0, -30.0, 0.deg)
+        var leftPlacePose = Pose2d(48.0, -30.0, 0.deg)
         var centerPlopPose = Pose2d(16.0, -38.0, (90).deg)
-        var centerPlacePose = Pose2d(50.0, -36.0, 0.deg)
-        var rightPlopPose = Pose2d(26.0, -46.0, (90).deg)
-        var rightPlacePose = Pose2d(50.0, -45.0, 0.deg)
+        var centerPlacePose = Pose2d(48.0, -36.0, 0.deg)
+        var rightPlopPose = Pose2d(21.0, -46.0, (90).deg)
+        var rightPlacePose = Pose2d(48.0, -45.0, 0.deg)
         var parkPose = Pose2d(52.0, -15.0, 0.deg)
 
         var exitTangent = (-120).deg
         var exitPose = Pose2d(18.0, -60.0, 0.deg)
         var stackPose = Pose2d(-59.0, -36.0, 0.deg)
         var crossPose = Pose2d(-36.0, -60.0, 0.deg)
-        var stackPlacePose = Pose2d(50.0, -42.0, 0.deg)
+        var stackPlacePose = Pose2d(46.0, -42.0, 0.deg)
 
         var stackHigh = 0.52
     }
@@ -82,13 +82,15 @@ class RedSussyWussyAutonomussy : CommandOpMode() {
             .splineToConstantHeading(crossPose.vec(), crossPose.heading + 180.deg)
             .splineTo(stackPose.vec() + Vector2d(5.0), stackPose.heading + 180.deg)
             .and(
-                (robot.outtake.reset() and robot.verticalExtension.goToPosition(0.0)) wait 1.0 then Command.select(robot.intake) {
+                (robot.outtake.reset() and robot.verticalExtension.goToPosition(0.0)) wait 1.0 then Command.select(
+                    robot.intake
+                ) {
                     robot.intake.waitForServoPosition(
                         stackPos
                     )
                 }
                     .then {
-                        stackPos -= 0.1
+                        stackPos += 0.1
                         robot.intake.servoState = Intake.ServoState.STACK
                         robot.intake.motorState = Intake.MotorState.ACTIVE
                     }
@@ -96,13 +98,12 @@ class RedSussyWussyAutonomussy : CommandOpMode() {
             .setFollower(robot.drive.slowFollower)
             .setTangent(stackPose.heading + 180.deg)
             .splineTo(stackPose.vec(), stackPose.heading + 180.deg)
-            .strafeLeft(2.0)
+            .strafeLeft(2.0).withTimeout(2.0)
             .and(
                 (
-                        Command.emptyCommand().waitUntil
-                        {
+                        Command.emptyCommand().waitUntil {
                             robot.intake.numPixels == 2
-                        }.and(
+                        }.race(
                             Command.select
                             {
                                 WaitCommand(0.4) then robot.intake.waitForServoPosition(robot.intake.servo.position + 0.01)
@@ -122,7 +123,7 @@ class RedSussyWussyAutonomussy : CommandOpMode() {
                     robot.transfer(),
                     FunctionalCommand(isFinished =
                     { robot.drive.poseEstimate.x > 10.0 }),
-                    (robot.verticalExtension.goToPosition(200.0) and robot.outtake.extend())
+                    (robot.verticalExtension.goToPosition(400.0) and robot.outtake.extend())
                 )
             )
             .setFollower(robot.drive.slowFollower)

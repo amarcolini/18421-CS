@@ -13,6 +13,7 @@ import com.amarcolini.joos.drive.DriveSignal
 import com.amarcolini.joos.extensions.*
 import com.amarcolini.joos.gamepad.GamepadEx
 import com.amarcolini.joos.geometry.Angle
+import com.amarcolini.joos.geometry.Angle.Companion.circle
 import com.amarcolini.joos.geometry.Pose2d
 import com.amarcolini.joos.geometry.Vector2d
 import com.amarcolini.joos.hardware.Motor
@@ -87,7 +88,11 @@ class LocalizationTest : CommandOpMode() {
                 )
             )
 
-            telem.drawRobot(robot.drive.poseEstimate, "blue")
+            val pose = robot.drive.poseEstimate
+            telem.drawRobot(pose, "blue")
+            telem.addData("x", pose.x)
+            telem.addData("y", pose.y)
+            telem.addData("heading", pose.heading)
         }
     }
 }
@@ -298,5 +303,56 @@ class MotorDirectionDebugger : CommandOpMode() {
                 motor.power = if (condition(gamepad.p1)) 1.0 else 0.0
             }
         }
+    }
+}
+
+@TeleOp(group = "Tuning")
+@JoosConfig
+class EncoderPositionTuner : CommandOpMode() {
+    private val robot by robot<CSRobot>()
+
+    //    private val headingSensor by getHardware<IMU>("imu").map {
+    //        getAngleSensor(
+    //                RevHubOrientationOnRobot.LogoFacingDirection.RIGHT,
+    //                RevHubOrientationOnRobot.UsbFacingDirection.UP
+    //        )
+    //    }
+    data class EncoderData(
+        val name: String,
+        val encoder: Motor.Encoder,
+        val phi: Angle
+    )
+
+    override fun preInit() {
+        val encoders: List<EncoderData> = listOf(
+            EncoderData("left", robot.drive.parallelEncoders[0], 0.deg),
+            EncoderData("right", robot.drive.parallelEncoders[1], 0.deg),
+            EncoderData("perp", robot.drive.perpEncoder, (-90).deg),
+        )
+        assert(encoders.isNotEmpty()) { "This drive does not support this test." }
+        SequentialCommand(true, Command.of {
+                robot.drive.setDrivePower(
+                    Pose2d(0.0, 0.0, -gamepad.p1.getRightStick().x.rad)
+                )
+            }.runUntil(gamepad.p1.a0::isActive), Command.of {
+            val theta: Angle =
+                circle.times(totalTurns.toDouble())
+            for (encoder in encoders) {
+                val solution: Double = encoder.encoder.distance / theta.radians
+                val pos =
+                    Vector2d(solution * encoder.phi.sin(), -solution * encoder.phi.cos())
+                //                telem.addData(encoder.name + " solution", solution).setRetained(true);
+                telem.addData(encoder.name + " pos", pos).setRetained(true)
+            }
+        }).onEnd {
+            robot.drive.setDrivePower(Pose2d())
+            telem.addLine("finished!").setRetained(true)
+        }.schedule()
+        telem.addLine("Turn the robot counter-clockwise $totalTurns times and press A when done.")
+        telem.update()
+    }
+
+    companion object {
+        var totalTurns = 10
     }
 }

@@ -31,7 +31,7 @@ class Intake(
     }
 
     enum class ServoState(val position: Double) {
-        DOWN(0.65), UP(0.09), STACK(0.5)
+        DOWN(0.65), UP(0.08), STACK(0.5)
     }
 
     var motorState = MotorState.STOPPED
@@ -84,13 +84,13 @@ class Intake(
     }
 
     fun waitForServoState(state: ServoState): Command {
-        return waitForPosition(state.position, 170.deg / servo.range).onEnd {
+        return waitForPosition(state.position, 150.deg / servo.range).onEnd {
             servoState = state
         }
             .requires(this)
     }
 
-    fun waitForServoPosition(position: Double) = waitForPosition(position, 170.deg / servo.range)
+    fun waitForServoPosition(position: Double) = waitForPosition(position, 150.deg / servo.range)
 
     var currentTarget = 0.0
     private fun waitForPosition(position: Double, speed: Double): Command = Command.select {
@@ -103,6 +103,7 @@ class Intake(
             currentTarget = servo.position
         }
             .wait(abs(currentPosition - correctedPos) / speed)
+            .setInterruptable(false)
             .requires(this)
     }
 

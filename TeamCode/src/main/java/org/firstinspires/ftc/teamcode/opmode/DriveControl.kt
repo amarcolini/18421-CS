@@ -3,13 +3,19 @@ package org.firstinspires.ftc.teamcode.opmode
 import android.graphics.Color
 import com.amarcolini.joos.command.Command
 import com.amarcolini.joos.command.CommandOpMode
+import com.amarcolini.joos.control.PIDCoefficients
+import com.amarcolini.joos.control.PIDController
 import com.amarcolini.joos.dashboard.JoosConfig
+import com.amarcolini.joos.gamepad.Button
 import com.amarcolini.joos.geometry.Pose2d
+import com.amarcolini.joos.util.deg
 import com.amarcolini.joos.util.rad
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp
 import org.firstinspires.ftc.robotcore.external.Telemetry
 import org.firstinspires.ftc.teamcode.CSRobot
 import org.firstinspires.ftc.teamcode.Intake
+import kotlin.math.PI
+import kotlin.math.abs
 import kotlin.math.pow
 
 @JoosConfig
@@ -23,11 +29,24 @@ class DriveControl : CommandOpMode() {
         telem.setDisplayFormat(Telemetry.DisplayFormat.HTML)
     }
 
+    companion object {
+        val headingCoeffs = PIDCoefficients(6.0, 0.0, 0.2)
+    }
+
     private var leftPixelColor: Intake.PixelColor? = null
     private var rightPixelColor: Intake.PixelColor? = null
     private var canTransfer = true
     private var hasIntaked = false
+    private val headingController = PIDController(headingCoeffs)
+    private var headingLock = false
+
+    init {
+        headingController.setInputBounds(-PI, PI)
+        headingController.setOutputBounds(-0.5, 0.5)
+    }
+
     override fun preStart() {
+        headingController.reset()
         schedule(true) {
             val leftStick = gamepad.p1.getLeftStick()
             val rightStick = gamepad.p1.getRightStick()
@@ -38,15 +57,18 @@ class DriveControl : CommandOpMode() {
                 -leftStick.x.pow(3),
                 -rightStick.x.pow(3).rad
             )
+            val initialPower = if (!isSlow) drivePose
+            else drivePose.run {
+                Pose2d(
+                    x * 0.2,
+                    y * 0.5,
+                    heading * 0.3
+                )
+            }
             robot.drive.setDrivePower(
-                if (!isSlow) drivePose
-                else drivePose.run {
-                    Pose2d(
-                        x * 0.2,
-                        y * 0.5,
-                        heading * 0.3
-                    )
-                }
+                if (headingLock) initialPower.copy(
+                    heading = headingController.update(robot.drive.poseEstimate.heading.radians).rad
+                ) else initialPower
             )
 
             val leftTrigger = gamepad.p1.left_trigger.value
@@ -75,6 +97,21 @@ class DriveControl : CommandOpMode() {
             telem.addLine("<font color=\"${leftColor}\">████</font>    <font color=\"${rightColor}\">████</font>")
         }
 
+        map(
+            {
+                abs(gamepad.p1.getRightStick().x) <= 0.1
+            },
+            Command.emptyCommand()
+                .waitUntil { robot.drive.poseVelocity?.heading?.let { it.abs().degrees < 10.0 } != false }
+                .then {
+                    headingController.targetPosition = robot.drive.poseEstimate.heading.radians
+                    headingController.reset()
+                    headingLock = true
+                }
+                .waitUntil { abs(gamepad.p1.getRightStick().x) > 0.1 }
+                .then { headingLock = false }
+        )
+
         map(gamepad.p1.y0::isJustActivated, Command.select(robot.outtake) {
             if (robot.outtake.isExtended) robot.outtake.resetArm()
             else robot.outtake.extend()
@@ -89,7 +126,8 @@ class DriveControl : CommandOpMode() {
             robot.outtake.releaseRight()
         }.requires(robot.outtake))
         map(
-            { robot.intake.numPixels == 2 && hasIntaked }, robot.intake.waitForServoState(Intake.ServoState.UP)
+            { robot.intake.numPixels == 2 && hasIntaked },
+            robot.intake.waitForServoState(Intake.ServoState.UP)
                 .then(robot.intake.stop()).onEnd {
                     val (left, right) = robot.intake.getPixelColors()
                     if (hasIntaked) {

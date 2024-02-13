@@ -102,7 +102,7 @@ class CSRobot : Robot() {
             InstantCommand { intake.motorState = Intake.MotorState.STOPPED },
             WaitCommand(0.3),
             outtake.prepareTransfer(),
-            WaitCommand(2.0).onInit { intake.motorState = Intake.MotorState.TRANSFER },
+            WaitCommand(1.0).onInit { intake.motorState = Intake.MotorState.TRANSFER },
             outtake.ready() and WaitCommand(0.3).then(intake.stop()),
         ).requires(intake, outtake, verticalExtension).setInterruptable(false)
             .onEnd {

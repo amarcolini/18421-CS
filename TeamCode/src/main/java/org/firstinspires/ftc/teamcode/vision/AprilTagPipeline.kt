@@ -3,23 +3,84 @@ package org.firstinspires.ftc.teamcode.vision
 import android.graphics.Canvas
 import com.amarcolini.joos.dashboard.JoosConfig
 import com.amarcolini.joos.geometry.Pose2d
+import com.amarcolini.joos.util.deg
 import org.firstinspires.ftc.robotcore.external.matrices.VectorF
-import org.firstinspires.ftc.robotcore.external.navigation.*
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit
+import org.firstinspires.ftc.robotcore.external.navigation.AxesOrder
+import org.firstinspires.ftc.robotcore.external.navigation.AxesReference
+import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit
+import org.firstinspires.ftc.robotcore.external.navigation.Orientation
+import org.firstinspires.ftc.robotcore.external.navigation.Quaternion
 import org.firstinspires.ftc.robotcore.internal.camera.calibration.CameraCalibration
 import org.firstinspires.ftc.teamcode.Transform3d
 import org.firstinspires.ftc.vision.apriltag.AprilTagDetection
 import org.firstinspires.ftc.vision.apriltag.AprilTagGameDatabase.getCenterStageTagLibrary
+import org.firstinspires.ftc.vision.apriltag.AprilTagLibrary
 import org.firstinspires.ftc.vision.apriltag.AprilTagProcessor
 import org.opencv.core.Mat
 import org.openftc.easyopencv.TimestampedOpenCvPipeline
-import kotlin.math.cos
-import kotlin.math.sin
+
 
 @JoosConfig
 class AprilTagPipeline(var calibration: () -> CameraCalibration) : TimestampedOpenCvPipeline() {
     companion object {
-        var webcamPose = Pose2d()
+        var webcamPose = Pose2d(
+            3.71, -1.91, (-93.3).deg
+        )
     }
+
+    private val customLibrary = AprilTagLibrary.Builder()
+        .addTag(
+            1, "BlueAllianceLeft",
+            2.0, VectorF(61.75f, 41.41f, 4f), DistanceUnit.INCH,
+            Quaternion(0.3536f, -0.6124f, 0.6124f, -0.3536f, 0)
+        )
+        .addTag(
+            2, "BlueAllianceCenter",
+            2.0, VectorF(61.75f, 35.41f, 4f), DistanceUnit.INCH,
+            Quaternion(0.3536f, -0.6124f, 0.6124f, -0.3536f, 0)
+        )
+        .addTag(
+            3, "BlueAllianceRight",
+            2.0, VectorF(61.75f, 29.41f, 4f), DistanceUnit.INCH,
+            Quaternion(0.3536f, -0.6124f, 0.6124f, -0.3536f, 0)
+        )
+        .addTag(
+            4, "RedAllianceLeft",
+            2.0, VectorF(61.75f, -29.41f, 4f), DistanceUnit.INCH,
+            Quaternion(0.3536f, -0.6124f, 0.6124f, -0.3536f, 0)
+        )
+        .addTag(
+            5, "RedAllianceCenter",
+            2.0, VectorF(61.75f, -35.41f, 4f), DistanceUnit.INCH,
+            Quaternion(0.3536f, -0.6124f, 0.6124f, -0.3536f, 0)
+        )
+        .addTag(
+            6, "RedAllianceRight",
+            2.0, VectorF(61.75f, -41.41f, 4f), DistanceUnit.INCH,
+            Quaternion(0.3536f, -0.6124f, 0.6124f, -0.3536f, 0)
+        )
+        .addTag(
+            7, "RedAudienceWallLarge",
+            5.0, VectorF(-70.25f, -40.625f, 5.5f), DistanceUnit.INCH,
+            Quaternion(0.5f, -0.5f, -0.5f, 0.5f, 0)
+        )
+        .addTag(
+            8, "RedAudienceWallSmall",
+            2.0, VectorF(-70.25f, -35.125f, 4f), DistanceUnit.INCH,
+            Quaternion(0.5f, -0.5f, -0.5f, 0.5f, 0)
+        )
+        .addTag(
+            9, "BlueAudienceWallSmall",
+            2.0, VectorF(-70.25f, 35.125f, 4f), DistanceUnit.INCH,
+            Quaternion(0.5f, -0.5f, -0.5f, 0.5f, 0)
+        )
+        .addTag(
+            10, "BlueAudienceWallLarge",
+            5.0, VectorF(-70.25f, 40.625f, 5.5f), DistanceUnit.INCH,
+            Quaternion(0.5f, -0.5f, -0.5f, 0.5f, 0)
+        )
+        .build()
 
     val processor = AprilTagProcessor
 //        .easyCreateWithDefaults()
@@ -27,7 +88,7 @@ class AprilTagPipeline(var calibration: () -> CameraCalibration) : TimestampedOp
         .setDrawTagID(true)
         .setDrawTagOutline(true)
         .setDrawAxes(true)
-        .setTagLibrary(getCenterStageTagLibrary())
+        .setTagLibrary(customLibrary)
         .setLensIntrinsics(926.725118, 940.8540229, 443.3417136, 310.9205909)
         .build()
 
@@ -42,7 +103,7 @@ class AprilTagPipeline(var calibration: () -> CameraCalibration) : TimestampedOp
         return input
     }
 
-    fun getPose(tag: AprilTagDetection): Transform3d? {
+    fun getPose(tag: AprilTagDetection): Pose2d? {
         if (tag.metadata == null) return null
 
         // Get the tag absolute position on the field
@@ -52,18 +113,6 @@ class AprilTagPipeline(var calibration: () -> CameraCalibration) : TimestampedOp
         )
 
         // Get the relative location of the tag from the camera
-        val orientation =
-            Orientation.getOrientation(tag.rawPose.R, AxesReference.EXTRINSIC, AxesOrder.XYZ, AngleUnit.RADIANS)
-        val xQ = Quaternion(
-            cos(orientation.thirdAngle), sin(orientation.thirdAngle), 0f, 0f, 0
-        )
-        val yQ = Quaternion(
-            cos(-orientation.firstAngle), 0f, sin(-orientation.firstAngle), 0f, 0
-        )
-        val zQ = Quaternion(
-            cos(-orientation.secondAngle), 0f, 0f, sin(-orientation.secondAngle), 0
-        )
-
         val cameraToTagTransform = Transform3d(
             VectorF(
                 tag.rawPose.x.toFloat(),
@@ -82,32 +131,46 @@ class AprilTagPipeline(var calibration: () -> CameraCalibration) : TimestampedOp
 
         // The the relative location of the camera to the robot
         //TODO: You have to tune this value for your camera
+        //36.17
+        //-37.32
+        //0.deg
+
+        //39.88
+        //-39.23
+        //-93.3
         val robotToCameraTransform = Transform3d(
             VectorF(
-                17.229937f,
-                1.5510408f,
-                -9.339169f
+                webcamPose.x.toFloat(),
+                webcamPose.y.toFloat(),
+                0f,
             ),
-            Quaternion(0.539f, 0.026f, -0.063f, 0.839f, System.nanoTime())
+//            Quaternion(0.539f, 0.026f, -0.063f, 0.839f, System.nanoTime())
 //        Quaternion.identityQuaternion(),
-//            Transform3d.MatrixToQuaternion(
-//                Orientation.getRotationMatrix(
-//                    AxesReference.INTRINSIC, AxesOrder.ZYX, AngleUnit.RADIANS,
-//                    webcamPose.heading.radians.toFloat(), 0f, 0f
-//                )
-//            )
+            Transform3d.matrixToQuaternion(
+                Orientation.getRotationMatrix(
+                    AxesReference.EXTRINSIC, AxesOrder.ZYX, AngleUnit.DEGREES,
+                    webcamPose.heading.degrees.toFloat(), 0f, 0f
+                )
+            )
         )
 
         // Inverse the previous transform again to get the location of the robot from the camera
         val cameraToRobotTransform = robotToCameraTransform.unaryMinusInverse()
 
+        val initialPose = cameraPose.toPose2d()
+        val newHeading = initialPose.heading - webcamPose.heading
+        val robotPose = Pose2d(
+            initialPose.vec() - webcamPose.vec().rotated(newHeading),
+            newHeading
+        )
+
         // Add the relative location of the robot to location of the Camera
-        val robotPose = cameraPose.plus(cameraToRobotTransform)
+//        val robotPose = cameraPose.plus(cameraToRobotTransform)
 
 //        robotPose.plus(cameraPose.unaryMinusInverse()).unaryMinusInverse()
 
         // Convert from a 3D transform to a 2D pose
-        return cameraPose
+        return robotPose
     }
 
     override fun onDrawFrame(

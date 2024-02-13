@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.opmode
 
 import com.acmerobotics.dashboard.FtcDashboard
 import com.amarcolini.joos.command.CommandOpMode
+import com.amarcolini.joos.geometry.Pose2d
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp
 import org.firstinspires.ftc.robotcore.internal.camera.calibration.CameraCalibrationHelper
 import org.firstinspires.ftc.teamcode.CSRobot
@@ -38,15 +39,17 @@ class AprilTagTest : CommandOpMode() {
         })
         schedule(true) {
             val detections = pipeline.processor.detections
-            detections.forEachIndexed { _, it ->
+            var avgPose = Pose2d()
+            val count = detections.mapIndexedNotNull { _, it ->
                 val pose = pipeline.getPose(it)
                 if (pose != null) {
                     val i = it.id
                     telem.addLine("p")
-                    telem.drawRobot(pose.toPose2d(), "blue")
-                    telem.addLine("pose $i: ${pose.translation.data.toList()}")
-                    telem.addLine("heading $i: ${pose.zRotation}")
-                    telem.addLine("quat $i: ${pose.rotation}")
+                    telem.drawRobot(pose, "blue")
+                    telem.addLine("pose $i: $pose")
+//                    telem.addLine("pose $i: ${pose.translation.data.toList()}")
+//                    telem.addLine("heading $i: ${pose.zRotation}")
+//                    telem.addLine("quat $i: ${pose.rotation}")
 //                    telem.addLine(
 //                        "center $i: ${
 //                            Vector2d(
@@ -54,8 +57,12 @@ class AprilTagTest : CommandOpMode() {
 //                            )
 //                        }"
 //                    )
+                    avgPose += pose
                 }
-            }
+            }.size
+            avgPose /= count.toDouble()
+            telem.drawRobot(avgPose, "green")
+            telem.addLine("avg pose: $avgPose")
         }
 
         initLoop = true

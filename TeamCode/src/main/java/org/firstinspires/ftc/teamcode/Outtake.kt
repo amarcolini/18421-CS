@@ -14,8 +14,8 @@ class Outtake(
     companion object {
         private val initPosition = 0.7
         private val outtakePosition = 0.35
-        private val armNeutral = 0.93
-        var armTransfer = 0.94
+        private val armNeutral = 0.92
+        var armTransfer = 0.945
         private val rightPositions = arrayOf(0.35, 0.6)
         private val leftPositions = arrayOf(0.97, 0.75)
         private val climbPosition = 0.6
