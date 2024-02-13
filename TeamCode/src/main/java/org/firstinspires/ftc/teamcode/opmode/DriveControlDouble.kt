@@ -90,7 +90,7 @@ class DriveControlDouble : CommandOpMode() {
 
         map(
             {
-                abs(gamepad.p1.getRightStick().x) < 0.2
+                abs(gamepad.p1.getRightStick().x) <= 0.1
             },
             Command.emptyCommand()
                 .waitUntil { robot.drive.poseVelocity?.heading?.let { it.abs().degrees < 10.0 } != false }
@@ -99,9 +99,8 @@ class DriveControlDouble : CommandOpMode() {
                     headingController.reset()
                     headingLock = true
                 }
-                .waitUntil { abs(gamepad.p1.getRightStick().x) > 0.2 }
+                .waitUntil { abs(gamepad.p1.getRightStick().x) > 0.1 }
                 .then { headingLock = false }
-                .repeatForever()
         )
 
         map(gamepad.p2.y0::isJustActivated, Command.select(robot.outtake) {
