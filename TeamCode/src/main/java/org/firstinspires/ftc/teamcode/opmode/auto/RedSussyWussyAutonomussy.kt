@@ -20,18 +20,19 @@ class RedSussyWussyAutonomussy : CommandOpMode() {
     companion object {
         var startPose = Pose2d(16.0, -3 * tile + 9.0, (90).deg)
         var leftPlopPose = Pose2d(10.0, -35.0, (-180).deg)
-        var leftPlacePose = Pose2d(48.0, -30.0, 0.deg)
-        var centerPlopPose = Pose2d(16.0, -38.0, (90).deg)
-        var centerPlacePose = Pose2d(48.0, -36.0, 0.deg)
+        var leftPlacePose = Pose2d(49.0, -30.0, 0.deg)
+        var centerPlopPose = Pose2d(16.0, -40.0, (90).deg)
+        var centerPlacePose = Pose2d(49.0, -36.0, 0.deg)
         var rightPlopPose = Pose2d(21.0, -46.0, (90).deg)
-        var rightPlacePose = Pose2d(48.0, -45.0, 0.deg)
+        var rightPlacePose = Pose2d(49.0, -45.0, 0.deg)
         var parkPose = Pose2d(52.0, -15.0, 0.deg)
 
         var exitTangent = (-120).deg
-        var exitPose = Pose2d(18.0, -60.0, 0.deg)
+        var exitPose = Pose2d(18.0, -59.0, 0.deg)
         var stackPose = Pose2d(-59.0, -36.0, 0.deg)
-        var crossPose = Pose2d(-36.0, -60.0, 0.deg)
-        var stackPlacePose = Pose2d(46.0, -42.0, 0.deg)
+        var crossPose = Pose2d(-36.0, -59.0, 0.deg)
+        var stackPlacePose = Pose2d(47.0, -42.0, 0.deg)
+        var leftStackTangent = (-90).deg
 
         var stackHigh = 0.52
     }
@@ -54,7 +55,8 @@ class RedSussyWussyAutonomussy : CommandOpMode() {
         robot.outtake.ready()
         robot.drive.poseEstimate = startPose
 
-        val (plopPose, placePose) = when (pipeline.lastKnownLocation) {
+        val propPosition = pipeline.lastKnownLocation
+        val (plopPose, placePose) = when (propPosition) {
             PropPipeline.PropLocation.Left -> leftPlopPose to leftPlacePose
             PropPipeline.PropLocation.Center -> centerPlopPose to centerPlacePose
             PropPipeline.PropLocation.Right -> rightPlopPose to rightPlacePose
@@ -97,7 +99,10 @@ class RedSussyWussyAutonomussy : CommandOpMode() {
             )
             .setFollower(robot.drive.slowFollower)
             .setTangent(stackPose.heading + 180.deg)
-            .splineTo(stackPose.vec(), stackPose.heading + 180.deg)
+            .splineToSplineHeading(
+                stackPose,
+                if (propPosition == PropPipeline.PropLocation.Left) leftStackTangent else stackPose.heading + 180.deg
+            )
             .strafeLeft(2.0).withTimeout(2.0)
             .and(
                 (
@@ -112,7 +117,7 @@ class RedSussyWussyAutonomussy : CommandOpMode() {
                         ).withTimeout(1.5)
             )
             .resetFollower()
-            .setTangent(stackPose.heading)
+            .setTangent(if (propPosition == PropPipeline.PropLocation.Left) (leftStackTangent + 180.deg) else stackPose.heading)
             .forward(5.0)
             .splineToSplineHeading(Pose2d(crossPose.vec(), exitPose.heading), crossPose.heading)
             .splineToConstantHeading(exitPose.vec(), crossPose.heading)
@@ -127,7 +132,7 @@ class RedSussyWussyAutonomussy : CommandOpMode() {
                 )
             )
             .setFollower(robot.drive.slowFollower)
-            .forward(3.0).withTimeout(0.5)
+            .forward(3.0).withTimeout(1.0)
             .resetFollower()
             .then {
                 robot.outtake.releaseRight()
