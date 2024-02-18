@@ -13,26 +13,26 @@ import org.firstinspires.ftc.teamcode.vision.PropPipeline
 
 @Autonomous
 @JoosConfig
-class RedSussyWussyAutonomussy : CommandOpMode() {
+class BlueSussyWussyAutonomussy : CommandOpMode() {
     private val robot by robot<CSRobot>()
-    private val pipeline = PropPipeline(false)
+    private val pipeline = PropPipeline(true)
 
     companion object {
-        var startPose = Pose2d(16.0, -3 * tile + 9.0, (90).deg)
-        var leftPlopPose = Pose2d(10.0, -35.0, (-180).deg)
-        var leftPlacePose = Pose2d(50.0, -30.0, 0.deg)
-        var centerPlopPose = Pose2d(16.0, -41.0, (90).deg)
-        var centerPlacePose = Pose2d(50.0, -36.0, 0.deg)
-        var rightPlopPose = Pose2d(21.5, -43.0, (90).deg)
-        var rightPlacePose = Pose2d(50.0, -45.0, 0.deg)
-        var parkPose = Pose2d(52.0, -15.0, 0.deg)
+        var startPose = Pose2d(16.0, 3 * tile - 9.0, (-90).deg)
+        var rightPlopPose = Pose2d(10.0, 35.0, (180).deg)
+        var rightPlacePose = Pose2d(50.5, 32.0, 0.deg)
+        var centerPlopPose = Pose2d(16.0, 41.0, (-90).deg)
+        var centerPlacePose = Pose2d(50.5, 39.0, 0.deg)
+        var leftPlopPose = Pose2d(25.0, 43.5, (-90).deg)
+        var leftPlacePose = Pose2d(50.5, 46.0, 0.deg)
+        var parkPose = Pose2d(52.0, 15.0, 0.deg)
 
-        var exitTangent = (-120).deg
-        var exitPose = Pose2d(18.0, -59.0, 0.deg)
-        var stackPose = Pose2d(-59.0, -36.0, 0.deg)
-        var crossPose = Pose2d(-36.0, -59.0, 0.deg)
-        var stackPlacePose = Pose2d(48.0, -39.0, 0.deg)
-        var leftStackTangent = (-90).deg
+        var exitTangent = (120).deg
+        var exitPose = Pose2d(18.0, 60.0, 0.deg)
+        var stackPose = Pose2d(-59.0, 37.0, 0.deg)
+        var crossPose = Pose2d(-36.0, 60.0, 0.deg)
+        var stackPlacePose = Pose2d(47.0, 39.0, 0.deg)
+        var leftStackTangent = (90).deg
 
         var stackHigh = 0.51
     }
@@ -103,7 +103,7 @@ class RedSussyWussyAutonomussy : CommandOpMode() {
                 stackPose,
                 stackPose.heading + 180.deg
             ).race(WaitCommand(2.0))
-            .strafeLeft(2.0)
+            .strafeRight(2.0)
             .race(
                 (
                         Command.emptyCommand().waitUntil {
@@ -132,11 +132,11 @@ class RedSussyWussyAutonomussy : CommandOpMode() {
                 )
             )
             .setFollower(robot.drive.slowFollower)
-            .forward(3.0).withTimeout(1.0)
+            .forward(3.0).withTimeout(2.0)
             .resetFollower()
             .then {
-                robot.outtake.releaseRight()
                 robot.outtake.releaseLeft()
+                robot.outtake.releaseRight()
             }.wait(0.5)
             .build()
 

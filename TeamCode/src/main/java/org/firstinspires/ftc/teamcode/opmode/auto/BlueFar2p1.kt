@@ -67,21 +67,22 @@ class BlueFar2p1 : CommandOpMode() {
         //Picking up one pixel off stack and crossing stage door
         val intakeAndCrossCommand = robot.drive.pathCommandBuilder(purplePlopCommand.endPose)
             .lineToSplineHeading(exitPose)
+            .wait(9.0)
             .setFollower(robot.drive.slowFollower)
             .lineToSplineHeading(stackPose)
-            .and(
+            .race(
                 robot.intake.waitForServoPosition(stackHigh)
                     .then {
                         robot.intake.servoState = Intake.ServoState.STACK
                         robot.intake.motorState = Intake.MotorState.ACTIVE
-                    }
+                    } wait 4.0
             )
             .resetFollower()
             .then(Command.emptyCommand().waitUntil {
                 robot.intake.numPixels == 2
             }.withTimeout(3.0))
             .splineTo(crossPose.vec(), crossPose.heading)
-            .splineTo(placePose.vec(), placePose.heading)
+            .splineToSplineHeading(placePose, 0.deg)
             .and(WaitCommand(0.5).then(robot.transfer()))
             .build()
 

@@ -89,7 +89,8 @@ class AprilTagPipeline(var calibration: () -> CameraCalibration) : TimestampedOp
         .setDrawTagOutline(true)
         .setDrawAxes(true)
         .setTagLibrary(customLibrary)
-        .setLensIntrinsics(926.725118, 940.8540229, 443.3417136, 310.9205909)
+//        .setLensIntrinsics(926.725118, 940.8540229, 443.3417136, 310.9205909)
+        .setLensIntrinsics(940.8225412, 978.674246, 458.0883374, 334.6182194)
         .build()
 
     override fun init(mat: Mat) {
